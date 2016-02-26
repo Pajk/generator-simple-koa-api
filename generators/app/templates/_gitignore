@@ -1,0 +1,8 @@
+node_modules/
+.env*
+.DS_Store
+*.swp
+.idea/
+Session.vim
+npm-debug.log
+.npmrc

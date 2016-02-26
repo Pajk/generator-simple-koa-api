@@ -1,0 +1,22 @@
+{
+  "name": "generator-simple-koa-api",
+  "description": "Koa based API skeleton",
+  "version": "0.1.0",
+  "repository": "github:Pajk/generator-simple-koa-api",
+  "author": "Pavel Pokorny <pajkycz@gmail.com>",
+  "files": [
+    "generators/app"
+  ],
+  "keywords": [
+    "yeoman-generator",
+    "koa",
+    "api",
+    "dependency injection",
+    "postgres"
+  ],
+  "main": "generators/app/index.js",
+  "dependencies": {
+    "yeoman-generator": "^0.22.5"
+  },
+  "license": "MIT"
+}
