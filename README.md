@@ -11,6 +11,6 @@ npm install
 npm test # runs test suite using db configured in .env-test
 npm start # runs the api, conntects to db from .env, ctrl+c to exit
 npm run graph # first `brew install graphviz` if you don't have it already
-npm run new your new db migration title # generate new database migration files
+npm run db-new your new db migration title # generate new database migration files
 # start hacking!
 ```
