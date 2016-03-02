@@ -17,12 +17,14 @@ module.exports = generators.Base.extend({
       type    : 'input',
       name    : 'authorName',
       message : 'Author name',
-      default : 'John Doe'
+      default : 'John Doe',
+      store   : true
     },{
       type    : 'input',
       name    : 'authorEmail',
       message : 'Author email',
-      default : 'developer@example.com'
+      default : 'developer@example.com',
+      store   : true
     }], function (answers) {
       this.props = answers
       done()
