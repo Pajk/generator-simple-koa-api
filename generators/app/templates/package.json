@@ -56,7 +56,8 @@
   "devDependencies": {
     "bandage-runner": "^1.0.0",
     "co-supertest": "git://github.com/pajk/co-supertest.git#22fb0e691bf5e75504675afeee800e52b5a1f9f2",
-    "db-migrator": "0.1.0",
+    "db-migrator": "^1.0.3",
+    "pg-bluebird": "^1.0.8",
     "eslint": "^1.6.0",
     "istanbul": "^0.4.0",
     "supertest": "^1.1.0",
