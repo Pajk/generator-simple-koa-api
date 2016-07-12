@@ -1,18 +1,16 @@
-'use strict'
-
 const hash = require('../helper/hash')
 const msg = require('../config/msg')
 const userData = require('../data/user')
 
 const service = {}
 
-service.create = function* (data) {
+service.create = async function (data) {
     try {
         if (data.password) {
-            data.password = yield hash.get(data.password)
+            data.password = await hash.get(data.password)
         }
 
-        return yield userData.create(data)
+        return await userData.create(data)
     } catch(e) {
         const err = new Error()
         if (e.constraint == 'user_email_key') {
@@ -28,9 +26,9 @@ service.create = function* (data) {
     }
 }
 
-service.login = function* (email, password) {
-    const loaded_user = yield userData.getUserByEmail(email)
-    const valid = yield hash.verify(loaded_user.password, password)
+service.login = async function (email, password) {
+    const loaded_user = await userData.getUserByEmail(email)
+    const valid = await hash.verify(loaded_user.password, password)
 
     return valid ? loaded_user : null
 }

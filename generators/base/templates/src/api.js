@@ -1,12 +1,11 @@
-'use strict'
-
 require('dotenv').load({ silent: true })
 global.Promise = require('bluebird')
 
 const compress = require('koa-compress')
 const koalogger = require('koa-logger')
+const convert = require('koa-convert')
 const koabody = require('koa-body')
-const koa = require('koa')
+const Koa = require('koa')
 
 const pagination_middleware = require('./middleware/pagination')
 const debug_middleware = require('./middleware/debug')
@@ -16,7 +15,7 @@ const logger = require('./helper/logger')
 const setupRoutes = require('./route')
 const config = require('./config')
 
-const app = koa()
+const app = new Koa()
 
 const setupMiddlewares = function () {
     app.use(compress())
@@ -26,7 +25,7 @@ const setupMiddlewares = function () {
         app.use(koalogger())
     }
 
-    app.use(koabody(config.api.body))
+    app.use(convert(koabody(config.api.body)))
     app.use(debug_middleware)
     app.use(auth_middleware)
     app.use(pagination_middleware)

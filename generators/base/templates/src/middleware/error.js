@@ -1,34 +1,32 @@
-'use strict'
-
 const _ = require('lodash')
 const logger = require('../helper/logger')
 
-module.exports = function* catchErrors(next) {
+module.exports = async (ctx, next) => {
     try {
-        yield next
+        await next()
     } catch (err) {
         const body = {}
 
         body.status = err.status || 500
         body.title = err.title
-        body.message = err.message || this.message
+        body.message = err.message || ctx.message
 
         if (err.type == 'invalid_request') {
             body.validation_messages = err.validation_messages
         }
 
-        this.type = 'json'
-        this.body = body
-        this.status = body.status
+        ctx.type = 'json'
+        ctx.body = body
+        ctx.status = body.status
         //console.log(err.stack)
 
-        if (this.status > 403 && err) {
+        if (ctx.status > 403 && err) {
             const log = _.cloneDeep(body)
 
             Object.assign(log, err)
 
-            if (!log.user_id && this.state.current_user) {
-                log.user_id = this.state.current_user.user_id
+            if (!log.user_id && ctx.state.current_user) {
+                log.user_id = ctx.state.current_user.user_id
             }
 
             if (err.stack) {

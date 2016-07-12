@@ -1,5 +1,3 @@
-'use strict'
-
 const _ = require('lodash')
 
 const createMessage = function(validation_messages) {

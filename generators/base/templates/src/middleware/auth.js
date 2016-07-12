@@ -1,5 +1,3 @@
-'use strict'
-
 const logger = require('../helper/logger')
 const config = require('../config')
 const user_data = require('../data/user')
@@ -12,26 +10,26 @@ const isPublicRoute = function(method, path) {
     return public_routes && public_routes.indexOf(normalized_path) >= 0
 }
 
-module.exports = function* (next) {
+module.exports = async (ctx, next) => {
     // public route and no authorization header -> let it pass
-    if (isPublicRoute(this.method, this.path) && (!this.header.authorization || this.header.authorization == 'Bearer ')) {
-        return yield next
+    if (isPublicRoute(ctx.method, ctx.path) && (!ctx.header.authorization || ctx.header.authorization == 'Bearer ')) {
+        return await next()
     }
 
     let session_token,
         decoded
 
-    this.state = this.state || {}
+    ctx.state = ctx.state || {}
 
-    if (!this.header.authorization) {
+    if (!ctx.header.authorization) {
         logger.log('No Authorization header found.')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
-    const parts = this.header.authorization.split(' ')
+    const parts = ctx.header.authorization.split(' ')
     if (parts.length !== 2) {
         logger.log('Bad Authorization header format.')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
     const scheme = parts[0]
@@ -43,30 +41,30 @@ module.exports = function* (next) {
 
     if (!session_token) {
         logger.log('Missing authorization token')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
     try {
-        decoded = yield token.verify(session_token)
+        decoded = await token.verify(session_token)
     } catch (e) {
         logger.log('Invalid Authorization token.')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
     if (typeof decoded.db_token !== 'string') {
         logger.log('Invalid Authorization token.')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
-    const current_user = yield user_data.getUserByToken(decoded.db_token)
+    const current_user = await user_data.getUserByToken(decoded.db_token)
     if (current_user === false) {
         logger.log('Session is no longer valid.')
-        this.throw(401, config.msg.auth_error)
+        ctx.throw(401, config.msg.auth_error)
     }
 
-    this.state.session_token = session_token
-    this.state.session_db_token = decoded.db_token
-    this.state.current_user = current_user
+    ctx.state.session_token = session_token
+    ctx.state.session_db_token = decoded.db_token
+    ctx.state.current_user = current_user
 
-    return yield next
+    return await next()
 }

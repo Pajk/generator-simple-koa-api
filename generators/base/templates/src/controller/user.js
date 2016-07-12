@@ -1,5 +1,3 @@
-'use strict'
-
 const responseHelper = require('../helper/response')
 const userService = require('../service/user')
 const userValidator = require('../validator/user')
@@ -7,27 +5,27 @@ const sessionService = require('../service/session')
 
 const controller = {}
 
-controller.create = function* () {
-    userValidator.validate(this.request.body)
+controller.create = async function (ctx) {
+    userValidator.validate(ctx.request.body)
 
-    const user_id = yield userService.create(this.request.body)
-    const session_token = yield sessionService.create(user_id)
+    const user_id = await userService.create(ctx.request.body)
+    const session_token = await sessionService.create(user_id)
 
-    this.status = 201
-    this.body = { user_id, session_token }
+    ctx.status = 201
+    ctx.body = { user_id, session_token }
 }
 
-controller.getOne = function* (id) {
-    this.body = yield userService.get(id)
+controller.getOne = async function (ctx, id) {
+    ctx.body = await userService.get(id)
 }
 
-controller.getList = function* () {
-    const loadedUsers = this.state.current_user
-        ? yield userService.getList(this.state.pagination)
-        : yield userService.getPublicList(this.state.pagination)
+controller.getList = async function (ctx) {
+    const loadedUsers = ctx.state.current_user
+        ? await userService.getList(ctx.state.pagination)
+        : await userService.getPublicList(ctx.state.pagination)
 
-    this.state.pagination.force_offset = true
-    this.body = responseHelper.format(loadedUsers, this.request.path, this.request.query, this.state.pagination)
+    ctx.state.pagination.force_offset = true
+    ctx.body = responseHelper.format(loadedUsers, ctx.request.path, ctx.request.query, ctx.state.pagination)
 }
 
 module.exports = controller

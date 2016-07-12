@@ -1,5 +1,3 @@
-'use strict'
-
 module.exports = function(should, request, helper) {
 
     should('== ' + __filename + ' ==', function* () {})

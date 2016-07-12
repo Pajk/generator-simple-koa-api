@@ -1,7 +1,5 @@
-'use strict'
-
 module.exports = {
-    name: 'New API',
+    name: 'API',
     port: process.env.PORT || 3000,
     body: {
         multipart: true

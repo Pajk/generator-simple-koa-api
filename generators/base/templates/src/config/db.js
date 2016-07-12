@@ -1,5 +1,3 @@
-'use strict'
-
 module.exports = {
     url: process.env.PG_URL || process.env.DATABASE_URL,
     pool_size: process.env.PG_POOL_SIZE || 8,

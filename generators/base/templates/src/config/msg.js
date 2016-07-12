@@ -1,5 +1,3 @@
-'use strict'
-
 module.exports = {
     auth_error: 'Please log in and try again.',
     username_taken: 'User with that username already exists.',

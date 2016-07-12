@@ -1,20 +1,13 @@
-'use strict'
 
-const config = require('../config/api')
+module.exports = async (ctx, next) => {
+    const limit = parseInt(ctx.query.limit) || 0
+    const page = parseInt(ctx.query.page) || 1
+    const offset = parseInt(ctx.query.offset) || (page - 1) * limit || 0
+    const timestamp_offset = parseInt(ctx.query.timestamp_offset)
 
-module.exports = function* extract (next) {
-    const limit = parseInt(this.query.limit) || config.pagination.max_per_page
-    const page = parseInt(this.query.page) || 1
-    const offset = parseInt(this.query.offset) || (page - 1) * limit || 0
-    const timestamp_offset = parseInt(this.query.timestamp_offset)
+    ctx.state = ctx.state || {}
 
-    this.state = this.state || {}
+    ctx.state.pagination = { limit, offset, timestamp_offset, page }
 
-    this.state.pagination = {
-        limit: limit,
-        offset: offset,
-        timestamp_offset: timestamp_offset
-    }
-
-    yield next
+    await next()
 }

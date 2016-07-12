@@ -1,5 +1,3 @@
-'use strict'
-
 const v = require('validator')
 const baseValidator = require('./base')
 

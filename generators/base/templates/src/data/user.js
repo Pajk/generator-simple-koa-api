@@ -1,6 +1,5 @@
-'use strict'
-
 const db = require('../helper/db')
+const paginationHelper = require('../helper/pagination')
 
 const selection = [
     'id AS user_id',
@@ -12,32 +11,36 @@ const TABLE = '"user"'
 
 const dao = {}
 
-dao.create = function* (data) {
+dao.create = async function (data) {
     const allowed = ['email', 'password', 'name']
     const insertion = db.filterFields(allowed, data)
-    const result = yield db.query([
+    const result = await db.query([
         'INSERT INTO', TABLE, 'VALUES ?', insertion, 'RETURNING id'
     ])
 
     return result.pop().id
 }
 
-dao.getList = function* (pagination) {
-    return yield db.query([
+dao.getList = async function (pagination) {
+    const pagination_query = paginationHelper.getQueryParts(pagination)
+
+    return await db.query([
         'SELECT', selection.concat('email'), 'FROM', TABLE,
-        'LIMIT ? OFFSET ?', pagination.limit, pagination.offset
+        ...pagination_query.limit
     ])
 }
 
-dao.getPublicList = function* (pagination) {
-    return yield db.query([
+dao.getPublicList = async function (pagination) {
+    const pagination_query = paginationHelper.getQueryParts(pagination)
+
+    return await db.query([
         'SELECT', selection, 'FROM', TABLE,
-        'LIMIT ? OFFSET ?', pagination.limit, pagination.offset
+        ...pagination_query.limit
     ])
 }
 
-dao.getUserByToken = function* (token) {
-    const results = yield db.query([
+dao.getUserByToken = async function (token) {
+    const results = await db.query([
         'SELECT id AS user_id, id, email, name FROM', TABLE,
         'WHERE id = (SELECT user_id FROM "user_token" WHERE token = ?)', token
     ])
@@ -45,8 +48,8 @@ dao.getUserByToken = function* (token) {
     return results.length == 1 ? results.pop() : false
 }
 
-dao.getUserByEmail = function* (email) {
-    const rows = yield db.query([
+dao.getUserByEmail = async function (email) {
+    const rows = await db.query([
         'SELECT id AS user_id, password FROM', TABLE,
         'WHERE lower(email) = lower(?)', email
     ])

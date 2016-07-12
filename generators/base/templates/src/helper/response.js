@@ -1,5 +1,3 @@
-'use strict'
-
 const helper = {}
 
 helper.format = function (data, pathname, pagination) {

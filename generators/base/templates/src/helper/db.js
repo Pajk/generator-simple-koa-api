@@ -1,5 +1,3 @@
-'use strict'
-
 const _ = require('lodash')
 const pg = require('pg')
 const copg = require('co-pg')(pg)
@@ -73,7 +71,7 @@ helper.formatDate = function(date) {
 helper.DESC = false
 helper.ASC = true
 
-helper.withTransaction = function* (runner) {
+helper.withTransaction = Promise.coroutine(function* (runner) {
     const [client, done] = yield helper.getConnection()
 
     function* rollback (err) {
@@ -111,6 +109,6 @@ helper.withTransaction = function* (runner) {
     done()
 
     return result
-}
+})
 
 module.exports = helper

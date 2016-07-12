@@ -1,5 +1,3 @@
-'use strict'
-
 const route = require('koa-route')
 
 const sessionController = require('../controller/session')

@@ -1,6 +1,8 @@
-'use strict'
-
 require('dotenv').load({ path: '.env-test', silent: true })
+
+require('babel-core/register')({
+    presets: ['es2015-node6', 'stage-3']
+})
 
 global.Promise = require('bluebird')
 const supertest = require('co-supertest')

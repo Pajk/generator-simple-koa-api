@@ -1,8 +1,5 @@
-'use strict'
-
 const jwt = require('jsonwebtoken')
 const config = require('../config/auth')
-
 
 const ALGORITHM = 'HS256'
 
