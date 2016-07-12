@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && NODE_ENV=test node test.js $FILE | tap-spec",
     "cover": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && istanbul cover test.js $FILE | tap-spec",
-    "start": "node db-migrate.js && node src/startup.js",
+    "start": "node db-migrate.js && node src/startup.js | bunyan",
     "doc": "aglio -i doc/api.md -o doc/api.html --theme-full-width",
     "lint": "eslint src/ test/ test.js",
     "db-migrate": "db-migrate",
@@ -31,6 +31,7 @@
     "babel-core": "6.10.4",
     "babel-preset-es2015-node6": "0.2.0",
     "babel-preset-stage-3": "6.11.0",
+    "bunyan": "1.8.1",
     "co": "^4.6.0",
     "co-request": "^1.0.0",
     "credential": "^1.0.0",

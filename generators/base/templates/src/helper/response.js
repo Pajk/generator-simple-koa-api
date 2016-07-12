@@ -1,29 +1,26 @@
+const qs = require('querystring')
+
 const helper = {}
 
-helper.format = function (data, pathname, pagination) {
-    const limit = pagination.limit
-    const offset = pagination.offset
+const constructPageLink = function(pathname, query, pagination) {
+    return pathname + '?' + qs.stringify(Object.assign({}, query, pagination))
+}
+
+helper.format = function (data, pathname, query, {limit, offset, page } = {}) {
+    delete query.offset
+    delete query.timestamp_offset
 
     const output = {}
 
-    if (data.length == limit) {
+    if (limit && data.length == limit) {
+        if (page) {
+            output.next_page = constructPageLink(pathname, query, { limit, page: page + 1 })
+        } else {
+            output.next_page = constructPageLink(pathname, query, { limit, offset: limit + offset })
 
-        const date_offset = data.length ? data[ data.length - 1 ].created_at : undefined
-
-        const parts = pathname.split('?')
-
-        const url_params = [
-            (date_offset && !pagination.force_offset) ? ( 'timestamp_offset=' + date_offset.getTime() ) : ( 'offset=' + (limit + offset) ),
-            'limit=' + limit
-        ]
-
-        if (parts[1] != undefined) {
-            const queries = parts[1].split('&')
-            url_params.push(queries.filter(function (s) { return s.match(/gender=/) != null ? true : false }).pop())
+            const timestamp_offset = data[ data.length - 1 ].created_at.getTime()
+            output.next_page_timestamp = constructPageLink(pathname, query, { limit, timestamp_offset })
         }
-
-        // remove older queries from pathname
-        output.next_page = parts[0] + '?' + url_params.join('&')
     }
 
     output.data = data
@@ -31,5 +28,6 @@ helper.format = function (data, pathname, pagination) {
 
     return output
 }
+
 
 module.exports = helper

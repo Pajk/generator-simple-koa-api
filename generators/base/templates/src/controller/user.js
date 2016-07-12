@@ -24,7 +24,6 @@ controller.getList = async function (ctx) {
         ? await userService.getList(ctx.state.pagination)
         : await userService.getPublicList(ctx.state.pagination)
 
-    ctx.state.pagination.force_offset = true
     ctx.body = responseHelper.format(loadedUsers, ctx.request.path, ctx.request.query, ctx.state.pagination)
 }
 

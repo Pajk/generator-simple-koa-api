@@ -11,7 +11,8 @@ const pagination_middleware = require('./middleware/pagination')
 const debug_middleware = require('./middleware/debug')
 const error_middleware = require('./middleware/error')
 const auth_middleware = require('./middleware/auth')
-const logger = require('./helper/logger')
+const log_middleware = require('./middleware/logger')
+const log = require('./helper/logger')
 const setupRoutes = require('./route')
 const config = require('./config')
 
@@ -26,6 +27,7 @@ const setupMiddlewares = function () {
     }
 
     app.use(convert(koabody(config.api.body)))
+    app.use(log_middleware)
     app.use(debug_middleware)
     app.use(auth_middleware)
     app.use(pagination_middleware)
@@ -38,7 +40,7 @@ const api = {}
 
 api.start = function () {
     const port = config.api.port
-    logger.info(config.api.name, 'listening @', port, ' [', process.env.NODE_ENV || 'development', ']')
+    log.info(config.api.name, 'listening @', port, ' [', process.env.NODE_ENV || 'development', ']')
     return app.listen(port)
 }
 

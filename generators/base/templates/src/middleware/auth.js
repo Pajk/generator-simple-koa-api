@@ -1,4 +1,4 @@
-const logger = require('../helper/logger')
+const log = require('../helper/logger')
 const config = require('../config')
 const user_data = require('../data/user')
 const token = require('../helper/token')
@@ -22,13 +22,13 @@ module.exports = async (ctx, next) => {
     ctx.state = ctx.state || {}
 
     if (!ctx.header.authorization) {
-        logger.log('No Authorization header found.')
+        log.info('No Authorization header found.')
         ctx.throw(401, config.msg.auth_error)
     }
 
     const parts = ctx.header.authorization.split(' ')
     if (parts.length !== 2) {
-        logger.log('Bad Authorization header format.')
+        log.info('Bad Authorization header format.')
         ctx.throw(401, config.msg.auth_error)
     }
 
@@ -40,25 +40,25 @@ module.exports = async (ctx, next) => {
     }
 
     if (!session_token) {
-        logger.log('Missing authorization token')
+        log.info('Missing authorization token')
         ctx.throw(401, config.msg.auth_error)
     }
 
     try {
         decoded = await token.verify(session_token)
     } catch (e) {
-        logger.log('Invalid Authorization token.')
+        log.info('Invalid Authorization token.')
         ctx.throw(401, config.msg.auth_error)
     }
 
     if (typeof decoded.db_token !== 'string') {
-        logger.log('Invalid Authorization token.')
+        log.info('Invalid Authorization token.')
         ctx.throw(401, config.msg.auth_error)
     }
 
     const current_user = await user_data.getUserByToken(decoded.db_token)
     if (current_user === false) {
-        logger.log('Session is no longer valid.')
+        log.info('Session is no longer valid.')
         ctx.throw(401, config.msg.auth_error)
     }
 

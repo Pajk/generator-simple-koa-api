@@ -33,8 +33,12 @@ service.login = async function (email, password) {
     return valid ? loaded_user : null
 }
 
-service.getList = userData.getList
+service.getList = async function() {
+    return await userData.getList()
+}
 
-service.getPublicList = userData.getPublicList
+service.getPublicList = async function() {
+    return await userData.getPublicList()
+}
 
 module.exports = service

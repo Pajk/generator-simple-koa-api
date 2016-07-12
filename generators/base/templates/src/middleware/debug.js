@@ -1,27 +1,23 @@
 const _ = require('lodash')
-const logger = require('../helper/logger')
+const log = require('../helper/logger')
 
 module.exports = async (ctx, next) => {
-    const debug = /debug/.test(ctx.request.querystring)
+    const debug = process.env.DEBUG_REQUEST == 'true'
     if (debug) {
-
-        logger.log('path', ctx.request.path)
-        logger.log('query', ctx.request.querystring)
-        logger.log('body', JSON.stringify(ctx.request.body))
-        logger.log('headers', JSON.stringify(ctx.request.headers))
-
-        if (ctx.request.body) {
-            logger.log('multipart fields', JSON.stringify(ctx.request.body.fields))
-            logger.log('multipart files keys', ctx.request.body.files ? _.keys(ctx.request.body.files) : null)
-            logger.log('multipart files', JSON.stringify(ctx.request.body.files))
-        }
-
+        log.debug({
+            path: ctx.request.path,
+            query: ctx.request.querystring,
+            headers: ctx.request.headers,
+            body: ctx.request.body
+        }, 'DEBUG REQUEST INFO')
     }
 
     await next()
 
     if (debug) {
-        logger.log('status', ctx.status)
-        logger.log('response', JSON.stringify(ctx.body))
+        log.debug({
+            status: ctx.status,
+            response: ctx.body
+        })
     }
 }
