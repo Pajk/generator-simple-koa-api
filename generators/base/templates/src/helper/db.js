@@ -1,55 +1,45 @@
 const _ = require('lodash')
 const pg = require('pg')
-const copg = require('co-pg')(pg)
 const buildQuery = require('simple-builder').pg
-const Promise = require('bluebird')
 
 const config = require('../config/db')
 
-copg.defaults.poolSize = config.pool_size
-copg.defaults.poolIdleTimeout = config.pool_timeout
+const pool = new pg.Pool({
+    connectionString: config.connection_string,
+    min: config.pool_size_min,
+    max: config.pool_size_max,
+    idleTimeoutMillis: config.pool_timeout
+})
 
 const helper = {}
 
 helper.disconnect = function() {
-    copg.end()
+    pool.end().catch(console.error)
 }
 
-helper.getConnection = Promise.coroutine(function* () {
-    return yield copg.connectPromise(config.connection_string || config)
-})
+helper.getClient = function() {
+    return pool.connect()
+}
 
-helper.query = Promise.coroutine(function* (query, unescaped_values, connection) {
+// pg query doesn't throw the original exception when the catch is not used
+// not sure what is causing this
+const rethrow = function (err) {
+    throw err
+}
+
+helper.query = async function (query, unescaped_values, client) {
+
     if (query && query.constructor === Array && !unescaped_values) {
         const built = helper.build(query)
         query = built.text
         unescaped_values = built.values
     }
 
-    if (connection) {
-        const result = yield connection.queryPromise(query, unescaped_values)
-        return result.rows
-    }
+    const result = client
+        ? await client.query(query, unescaped_values).catch(rethrow)
+        : await pool.query(query, unescaped_values).catch(rethrow)
 
-    let returnToPool
-    try {
-        const connection_results = yield helper.getConnection()
-        connection = connection_results[0]
-        returnToPool = connection_results[1]
-        const result = yield connection.queryPromise(query, unescaped_values)
-
-        return result.rows
-    } catch (e) {
-        throw e
-    } finally {
-        if (returnToPool) {
-            returnToPool()
-        }
-    }
-})
-
-helper.createClient = function() {
-    return new copg.Client(config)
+    return result.rows
 }
 
 helper.build = buildQuery
@@ -71,44 +61,44 @@ helper.formatDate = function(date) {
 helper.DESC = false
 helper.ASC = true
 
-helper.withTransaction = Promise.coroutine(function* (runner) {
-    const [client, done] = yield helper.getConnection()
+helper.withTransaction = async function (runner) {
+    const client = await pool.connect()
 
-    function* rollback (err) {
+    const rollback = async function (err) {
         try {
-            yield client.queryPromise('ROLLBACK')
+            await client.query('ROLLBACK').catch(rethrow)
         } catch (err) {
             console.error('[INTERNAL_ERROR] Could not rollback transaction, removing from pool', err)
-            done(err)
+            client.release(err)
             throw err
         }
-        done()
+        client.release()
 
         throw err
     }
 
     try {
-        yield client.queryPromise('BEGIN')
+        await client.query('BEGIN').catch(rethrow)
     } catch (err) {
         console.error('[INTERNAL_ERROR] There was an error calling BEGIN', err)
-        return yield* rollback(err)
+        return await rollback(err)
     }
 
     let result
     try {
-        result = yield* runner(client)
+        result = await runner(client)
     } catch (err) {
-        return yield* rollback(err)
+        return await rollback(err)
     }
 
     try {
-        yield client.queryPromise('COMMIT')
+        await client.query('COMMIT').catch(rethrow)
     } catch (err) {
-        return yield* rollback(err)
+        return await rollback(err)
     }
-    done()
+    client.release()
 
     return result
-})
+}
 
 module.exports = helper
