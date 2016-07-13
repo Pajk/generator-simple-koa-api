@@ -12,8 +12,12 @@ const rules = {
             v.isEmail
         ]
     ],
-    name: [
-        'Name must be at least 2 and max 100 characters long',
+    first_name: [
+        'First name must be at least 2 and max 100 characters long',
+        v.isLength, 2, 100
+    ],
+    last_name: [
+        'Last name must be at least 2 and max 100 characters long',
         v.isLength, 2, 100
     ],
     password: [
@@ -22,8 +26,11 @@ const rules = {
     ]
 }
 
-const required = [
-    'email', 'password'
-]
+const required = {
+    email: 'Email is required',
+    password: 'Password is required',
+    first_name: 'First name is required',
+    last_name: 'Last name is required'
+}
 
 module.exports.validate = baseValidator.create(rules, required)

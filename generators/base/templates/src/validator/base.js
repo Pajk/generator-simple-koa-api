@@ -1,14 +1,16 @@
 const _ = require('lodash')
 
 const createMessage = function(validation_messages) {
-    return _.map(validation_messages, message => message + '.').join(' ')
+    return _.map(validation_messages, (message) => {
+        return message + '.'
+    }).join(' ')
 }
 
-const createError = function(validation_messages, values) {
+const createError = function(validation_messages, values, message) {
     const err = new Error()
     err.type = 'invalid_request'
     err.validation_messages = validation_messages
-    err.message = createMessage(validation_messages)
+    err.message = message || createMessage(validation_messages)
     err.values = values
     err.status = 422
 
@@ -22,9 +24,9 @@ const checkPresence = function(required, fields) {
 
     const validation_messages = {}
 
-    required.forEach(function(key) {
+    _.forEach(required, function(message, key) {
         if (fields.hasOwnProperty(key) !== true) {
-            return validation_messages[key] = 'required'
+            return validation_messages[key] = message
         }
     })
 
@@ -78,13 +80,13 @@ const validator = {}
 
 validator.create = function (rules, required) {
 
-    return function validator(fields) {
+    return function validator(fields, message) {
         const missing_fields = checkPresence(required, fields)
         const invalid_fields = checkValues(rules, fields)
-        const messages = Object.assign({}, missing_fields, invalid_fields)
+        const errors = Object.assign({}, missing_fields, invalid_fields)
 
-        if (_.isEmpty(messages) === false) {
-            throw createError(messages)
+        if (_.isEmpty(errors) === false) {
+            throw createError(errors, null, message)
         }
     }
 

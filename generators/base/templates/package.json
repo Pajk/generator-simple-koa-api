@@ -16,7 +16,7 @@
   },
   "config": {
     "db-migrator": {
-      "db-url": "postgresql://localhost?ssl=false",
+      "db-url": "postgresql://localhost/<%= DATABASE_NAME %>?ssl=false",
       "directory": "./migrations"
     }
   },
@@ -31,6 +31,7 @@
     "babel-core": "6.10.4",
     "babel-preset-es2015-node6": "0.2.0",
     "babel-preset-stage-3": "6.11.0",
+    "bluebird": "3.4.1",
     "bunyan": "1.8.1",
     "co": "^4.6.0",
     "co-request": "^1.0.0",
@@ -43,7 +44,7 @@
     "koa-body": "^1.4.0",
     "koa-compress": "2.0.0",
     "koa-logger": "2.0.0",
-    "koa-route": "3.1.0",
+    "koa-router": "7.0.1",
     "lodash": "^4.11.1",
     "pg": "6.0.2",
     "pg-bluebird": "^1.0.8",

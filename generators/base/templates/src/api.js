@@ -7,33 +7,28 @@ const convert = require('koa-convert')
 const koabody = require('koa-body')
 const Koa = require('koa')
 
-const pagination_middleware = require('./middleware/pagination')
-const debug_middleware = require('./middleware/debug')
-const error_middleware = require('./middleware/error')
-const auth_middleware = require('./middleware/auth')
-const log_middleware = require('./middleware/logger')
+const paginationMiddleware = require('./middleware/pagination')
+const debugMiddleware = require('./middleware/debug')
+const errorMiddleware = require('./middleware/error')
+const logMiddleware = require('./middleware/logger')
 const log = require('./helper/logger')
-const setupRoutes = require('./route')
+const setupRoutes = require('./routes')
 const config = require('./config')
 
 const app = new Koa()
 
-const setupMiddlewares = function () {
-    app.use(compress())
-    app.use(error_middleware)
+app.use(compress())
+app.use(errorMiddleware())
 
-    if (process.env.NODE_ENV != 'test') {
-        app.use(koalogger())
-    }
-
-    app.use(convert(koabody(config.api.body)))
-    app.use(log_middleware)
-    app.use(debug_middleware)
-    app.use(auth_middleware)
-    app.use(pagination_middleware)
+if (process.env.NODE_ENV == 'development') {
+    app.use(koalogger())
 }
 
-setupMiddlewares()
+app.use(convert(koabody(config.api.body)))
+app.use(logMiddleware())
+app.use(debugMiddleware(process.env.DEBUG_REQUEST == 'true'))
+app.use(paginationMiddleware())
+
 setupRoutes(app)
 
 const api = {}

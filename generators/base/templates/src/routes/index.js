@@ -7,6 +7,9 @@ module.exports = function (koaApp) {
     files.filter(function (file) {
         return path.extname(file) == '.js' && file != 'index.js'
     }).forEach(function (file) {
-        require(__dirname + '/' + file)(koaApp)
+        const router = require(__dirname + '/' + file)
+        koaApp
+            .use(router.routes())
+            .use(router.allowedMethods())
     })
 }

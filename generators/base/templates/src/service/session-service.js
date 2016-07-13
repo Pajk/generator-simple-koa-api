@@ -1,6 +1,6 @@
 const uuid = require('uuid')
 
-const sessionData = require('../data/session')
+const sessionData = require('../data/session-data')
 const config = require('../config/auth')
 const token = require('../helper/token')
 

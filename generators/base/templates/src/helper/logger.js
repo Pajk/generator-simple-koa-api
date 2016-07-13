@@ -7,7 +7,7 @@ module.exports = bunyan.createLogger({
     serializers: bunyan.stdSerializers,
     streams: [
         {
-            level: process.env.LOG_LEVEL || 'debug',
+            level: process.env.LOG_LEVEL || 'info',
             stream: process.stdout
         }
     ]

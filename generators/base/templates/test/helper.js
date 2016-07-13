@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const userRouter = require('../src/routes/user-routes')
 
 const testHelperFactory = function(request) {
 
@@ -27,7 +28,7 @@ const testHelperFactory = function(request) {
     }
 
     helper.auth = function(user, req) {
-        return req.set('Authorization', 'Bearer ' + user.session_token)
+        return req.set('Authorization', 'Bearer ' + user.token)
     }
 
     helper.put = function* (path, user, data, expect, headers) {
@@ -54,15 +55,15 @@ const testHelperFactory = function(request) {
 
     helper.createUser = function* (attributes) {
         const random_user = {
-            name: `User ${Date.now()}${Math.floor(1000000*Math.random()) + (new Date).getTime()}`,
+            first_name: `First ${Date.now()}${Math.floor(1000000*Math.random())}`,
+            last_name: `Last ${Date.now()}${Math.floor(1000000*Math.random())}`,
             password: 'secretpassword',
             email: `${Math.floor(1000000*Math.random())}${(new Date).getTime()}@example.com`
         }
 
         Object.assign(random_user, attributes)
 
-        const resp = yield this.post('/users', null, random_user, 201)
-
+        const resp = yield this.post(userRouter.url('signup'), null, random_user, 201)
         Object.assign(random_user, resp.body)
 
         return random_user

@@ -8,7 +8,8 @@ module.exports = generators.Base.extend({
       type    : 'input',
       name    : 'apiName',
       message : 'Your API name',
-      default : this.appname
+      default : this.appname,
+      store   : true
     },{
       type    : 'input',
       name    : 'authorName',
@@ -20,6 +21,12 @@ module.exports = generators.Base.extend({
       name    : 'authorEmail',
       message : 'Author email',
       default : 'developer@example.com',
+      store   : true
+    },{
+      type    : 'input',
+      name    : 'databaseName',
+      message : 'Database name',
+      default : 'api',
       store   : true
     }], function (answers) {
       this.props = answers
@@ -33,14 +40,19 @@ module.exports = generators.Base.extend({
       var context = {
         API_NAME: this.props.apiName,
         AUTHOR_NAME: this.props.authorName,
-        AUTHOR_EMAIL: this.props.authorEmail
+        AUTHOR_EMAIL: this.props.authorEmail,
+        DATABASE_NAME: this.props.databaseName
       }
 
-      this.fs.copyTpl(
-        this.templatePath('package.json'),
-        this.destinationPath('package.json'),
-        context
-      )
+      const copyTemplate = (from, to) => {
+        this.fs.copyTpl(
+          this.templatePath(from),
+          this.destinationPath(to),
+          context
+        )
+      }
+
+      copyTemplate('package.json', 'package.json')
 
       this.fs.copy(
         this.templatePath('db-*'),
@@ -53,13 +65,11 @@ module.exports = generators.Base.extend({
       this.directory('src')
       this.directory('migrations')
       this.directory('test')
-    },
 
-    configfiles: function () {
       this.copy('_gitignore', '.gitignore')
-      this.copy('_env', '.env')
-      this.copy('_env-test', '.env-test')
-      this.copy('_env', '.env.example')
+      copyTemplate('_env', '.env')
+      copyTemplate('_env-test', '.env-test')
+      copyTemplate('_env', '.env.example')
       this.copy('_travis.yml', '.travis.yml')
       this.copy('.editorconfig')
       this.copy('.eslintrc.json')

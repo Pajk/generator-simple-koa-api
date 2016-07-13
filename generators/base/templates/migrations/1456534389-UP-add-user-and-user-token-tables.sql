@@ -2,7 +2,8 @@
 
 CREATE TABLE "user" (
     id serial,
-    name character varying(100) NOT NULL,
+    first_name character varying(100) NOT NULL,
+    last_name character varying(100) NOT NULL,
     password character varying(400) NOT NULL,
     email character varying(200) NOT NULL,
     created_at timestamp with time zone DEFAULT now(),
