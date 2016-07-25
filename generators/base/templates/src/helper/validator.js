@@ -76,11 +76,8 @@ const checkValues = function(rules, fields) {
     return validation_messages
 }
 
-const validator = {}
-
-validator.create = function (rules, required) {
-
-    return function validator(fields, message) {
+module.exports = {
+    create: (rules, required) => (fields, message) => {
         const missing_fields = checkPresence(required, fields)
         const invalid_fields = checkValues(rules, fields)
         const errors = Object.assign({}, missing_fields, invalid_fields)
@@ -89,7 +86,4 @@ validator.create = function (rules, required) {
             throw createError(errors, null, message)
         }
     }
-
 }
-
-module.exports = validator

@@ -1,5 +1,5 @@
 const v = require('validator')
-const baseValidator = require('../../validator/base')
+const baseValidator = require('../../helper/validator')
 
 const rules = {
     email: [
