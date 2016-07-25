@@ -1,5 +1,5 @@
 const v = require('validator')
-const baseValidator = require('./base')
+const baseValidator = require('../../validator/base')
 
 const rules = {
     email: [
@@ -12,14 +12,6 @@ const rules = {
             v.isEmail
         ]
     ],
-    first_name: [
-        'First name must be at least 2 and max 100 characters long',
-        v.isLength, 2, 100
-    ],
-    last_name: [
-        'Last name must be at least 2 and max 100 characters long',
-        v.isLength, 2, 100
-    ],
     password: [
         'Password must be at least 7 characters long',
         v.isLength, 7, 100
@@ -28,9 +20,7 @@ const rules = {
 
 const required = {
     email: 'Email is required',
-    password: 'Password is required',
-    first_name: 'First name is required',
-    last_name: 'Last name is required'
+    password: 'Password is required'
 }
 
 module.exports.validate = baseValidator.create(rules, required)

@@ -1,5 +1,5 @@
 const msg = require('../config/msg')
-const userData = require('../data/user-data')
+const userData = require('../resource/user/user.data')
 const token = require('../helper/token')
 
 module.exports = function (options = {}) {

@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const userRouter = require('../src/routes/user-routes')
+const userRouter = require('../src/resource/user/user.router')
 
 const testHelperFactory = function(request) {
 
@@ -63,7 +63,7 @@ const testHelperFactory = function(request) {
 
         Object.assign(random_user, attributes)
 
-        const resp = yield this.post(userRouter.url('signup'), null, random_user, 201)
+        const resp = yield this.post(userRouter.url('create_user'), null, random_user, 201)
         Object.assign(random_user, resp.body)
 
         return random_user

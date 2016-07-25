@@ -1,4 +1,6 @@
-const userRouter = require('../src/routes/user-routes')
+const userRouter = require('../src/resource/user/user.router')
+const profileRouter = require('../src/resource/profile/profile.router')
+const sessionRouter = require('../src/resource/session/session.router')
 
 module.exports = function(should, request, helper) {
 
@@ -14,7 +16,7 @@ module.exports = function(should, request, helper) {
     should('Create a user with the existing email', function* (t) {
         const user = yield helper.createUser()
 
-        const resp = yield helper.post(userRouter.url('signup'), null, user, 422)
+        const resp = yield helper.post(userRouter.url('create_user'), null, user, 422)
 
         t.ok(resp.body.message, 'contains message')
         t.ok(resp.body.errors, 'contains errors')
@@ -25,7 +27,7 @@ module.exports = function(should, request, helper) {
     })
 
     should('Check required fields', function* (t) {
-        const resp = yield helper.post(userRouter.url('signup'), null, {
+        const resp = yield helper.post(userRouter.url('create_user'), null, {
             first_name: 'John',
             password: 'short'
         }, 422)
@@ -39,7 +41,7 @@ module.exports = function(should, request, helper) {
 
     should('Get user profile', function* (t) {
         const user = yield helper.createUser()
-        const resp = yield helper.get(userRouter.url('get profile'), user, 200)
+        const resp = yield helper.get(profileRouter.url('read_profile'), user, 200)
         const data = resp.body.user
 
         t.ok(data, 'response contains user')
@@ -49,7 +51,7 @@ module.exports = function(should, request, helper) {
     })
 
     should('Fail to get profile using unauthorized request', function* (t) {
-        yield helper.get(userRouter.url('get profile'), null, 401)
+        yield helper.get(profileRouter.url('read_profile'), null, 401)
 
         t.pass('server returns 401')
     })
@@ -62,24 +64,24 @@ module.exports = function(should, request, helper) {
         }
         t.ok(user, 'user created')
 
-        const resp = yield helper.post(userRouter.url('login'), null, creds, 201)
+        const resp = yield helper.post(sessionRouter.url('create_session'), null, creds, 201)
 
         t.equal(resp.body.id, user.id, 'response contains user id')
         t.ok(resp.body.token, 'response contains session token')
         t.notEqual(resp.body.token, user.token, 'new session token was generated')
 
         creds.password = 'asdfeee'
-        yield helper.post(userRouter.url('login'), null, creds, 403)
+        yield helper.post(sessionRouter.url('create_session'), null, creds, 403)
         t.pass('wrong password returns 403')
 
         creds.username = 'madeup'
-        yield helper.post(userRouter.url('login'), null, creds, 403)
+        yield helper.post(sessionRouter.url('create_session'), null, creds, 403)
         t.pass('wrong username returns 403')
     })
 
     should('Reject invalid credentials', function* (t) {
         t.pass('-- invalid email/password')
-        let resp = yield helper.post(userRouter.url('login'), null, {
+        let resp = yield helper.post(sessionRouter.url('create_session'), null, {
             email: 'abc',
             password: 'hmmm'
         }, 422)
@@ -91,7 +93,7 @@ module.exports = function(should, request, helper) {
         t.equal(resp.body.status_code, 422, 'contains status code')
 
         t.pass('-- empty body')
-        resp = yield helper.post(userRouter.url('login'), null, null, 422)
+        resp = yield helper.post(sessionRouter.url('create_session'), null, null, 422)
 
         t.ok(resp.body.message, 'contains message')
         t.ok(resp.body.errors, 'contains errors')
@@ -100,7 +102,7 @@ module.exports = function(should, request, helper) {
         t.equal(resp.body.status_code, 422, 'contains status code')
 
         t.pass('--  valid but not in db')
-        resp = yield helper.post(userRouter.url('login'), null, {
+        resp = yield helper.post(sessionRouter.url('create_session'), null, {
             email: 'abcasdlfkj@lkhsadf.com',
             password: 'validpassword'
         }, 403)
@@ -110,7 +112,7 @@ module.exports = function(should, request, helper) {
     })
 
     should('Logout user', function* (t) {
-        const logoutUrl = userRouter.url('logout')
+        const logoutUrl = sessionRouter.url('destroy_session')
         const user = yield helper.createUser()
         const creds = {
             email: user.email,
@@ -119,7 +121,7 @@ module.exports = function(should, request, helper) {
 
         yield helper.del(logoutUrl, user, null, 201)
 
-        const resp = yield helper.post(userRouter.url('login'), null, creds, 201)
+        const resp = yield helper.post(sessionRouter.url('create_session'), null, creds, 201)
 
         const token = resp.body.token
 

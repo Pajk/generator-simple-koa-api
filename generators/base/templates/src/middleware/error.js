@@ -14,6 +14,7 @@ module.exports = function() {
 
             if (err.validation_messages) {
                 body.errors = err.validation_messages
+                delete err.validation_messages
             }
 
             ctx.type = 'json'

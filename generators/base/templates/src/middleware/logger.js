@@ -6,7 +6,6 @@ module.exports = function () {
     return async (ctx, next) => {
 
         ctx.log = logger.child({
-            req: ctx.request
         })
 
         await next()

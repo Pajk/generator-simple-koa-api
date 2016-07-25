@@ -1,0 +1,77 @@
+<html>
+<body>
+    <input type="file" id="file-input">
+    <p id="status">Please select a file</p>
+    <img id="preview" src="" style="max-width:400px">
+    <span id="progressbar"></span>
+    <form id='create-user'>
+        <input type="hidden" id="avatar-url" name="avatar_url" value="">
+        <input type="text" name="first_name" placeholder="First Name"><br>
+        <input type="text" name="last_name" placeholder="Last Name"><br><br>
+        <input type="email" name="email" placeholder="E-mail"><br><br>
+        <input type="password" name="password"><br><br>
+        <input type="submit" value="Create User">
+    </form>
+</body>
+<script type="application/javascript">
+    (function() {
+
+        document.getElementById('file-input').onchange = function() {
+            document.getElementById('progressbar').innerText = ''
+            document.getElementById('preview').src = ''
+
+            const files = document.getElementById('file-input').files
+            const file = files[0]
+            if (file == null) return
+
+            uploadFile(file)
+        }
+
+        document.getElementById('create-user').onsubmit = function(e) {
+            e.preventDefault()
+            var xmlhttp = new XMLHttpRequest()
+            xmlhttp.open('POST', '/users')
+            xmlhttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8')
+
+            var userData = {}
+            for (var el of this.elements) {
+                if (el.name) userData[el.name] = el.value
+            }
+            console.log(userData)
+            xmlhttp.send(JSON.stringify(userData))
+        }
+
+        function uploadFile(file){
+            const xhr = new XMLHttpRequest()
+
+            const form = new FormData()
+            form.append('Content-Type', file.type || 'application/octet-stream')
+            form.append('file', file)
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return
+
+                const response = JSON.parse(xhr.responseText)
+
+                if (xhr.status !== 200) {
+                    document.getElementById('progressbar').innerText = response.message
+                    return
+                }
+
+                document.getElementById('preview').src = response.url
+                document.getElementById('avatar-url').value = response.url
+                document.getElementById('progressbar').innerText = ''
+            }
+
+            xhr.upload.addEventListener('progress', function(e){
+                e.percent = (e.loaded / e.total * 100).toFixed()
+
+                document.getElementById('progressbar').innerText = e.percent + '%'
+            })
+
+            xhr.open('POST', '/users/avatar')
+            xhr.send(form)
+        }
+    })()
+</script>
+</html>
