@@ -5,7 +5,8 @@
   "repository": "github:Pajk/generator-simple-koa-api",
   "author": "Pavel Pokorny <pajkycz@gmail.com>",
   "files": [
-    "generators/app"
+    "generators/app",
+    "generators/base"
   ],
   "keywords": [
     "yeoman-generator",
