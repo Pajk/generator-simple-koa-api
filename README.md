@@ -3,6 +3,7 @@
 ```bash
 npm install -g yo
 npm install -g generator-simple-koa-api
+psql -c 'create database my_api_db' # create a database for your api
 mkdir myapi; cd myapi
 yo simple-koa-api
 # edit .env, .env-test, package.json if needed

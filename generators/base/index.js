@@ -7,7 +7,7 @@ module.exports = generators.Base.extend({
     this.prompt([{
       type    : 'input',
       name    : 'apiName',
-      message : 'Your API name',
+      message : 'Your API name (no spaces)',
       default : this.appname,
       store   : true
     },{
