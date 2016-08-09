@@ -1,11 +1,12 @@
 const _ = require('lodash')
+const crypto = require('crypto')
 const userRouter = require('../src/resource/user/user.router')
 
-const testHelperFactory = function(request) {
+const testHelperFactory = function (request) {
 
     const helper = {}
 
-    helper.request = function(method, path, user, data, expect, headers) {
+    helper.request = function (method, path, user, data, expect, headers) {
         const req = request[method](path)
 
         if (user) {
@@ -27,7 +28,7 @@ const testHelperFactory = function(request) {
         return req.end()
     }
 
-    helper.auth = function(user, req) {
+    helper.auth = function (user, req) {
         return req.set('Authorization', 'Bearer ' + user.token)
     }
 
@@ -47,26 +48,30 @@ const testHelperFactory = function(request) {
         return yield helper.request('post', path, user, data, expect, headers)
     }
 
-    helper.randomize = function(text) {
+    helper.randomize = function (text) {
         return text + Date.now() + Math.floor(1000*Math.random())
     }
 
-  // ==== user ====
+    helper.randomString = function (length) {
+        length = length || 10
+        return crypto.randomBytes(parseInt(length/2)).toString('hex')
+    }
+
+    // ==== user ====
 
     helper.createUser = function* (attributes) {
-        const random_user = {
+        const randomUser = {
             first_name: `First ${Date.now()}${Math.floor(1000000*Math.random())}`,
             last_name: `Last ${Date.now()}${Math.floor(1000000*Math.random())}`,
             password: 'secretpassword',
             email: `${Math.floor(1000000*Math.random())}${(new Date).getTime()}@example.com`
         }
 
-        Object.assign(random_user, attributes)
+        Object.assign(randomUser, attributes)
+        const resp = yield this.post(userRouter.url('createUser'), null, randomUser, 201)
+        Object.assign(randomUser, resp.body)
 
-        const resp = yield this.post(userRouter.url('create_user'), null, random_user, 201)
-        Object.assign(random_user, resp.body)
-
-        return random_user
+        return randomUser
     }
 
     return helper

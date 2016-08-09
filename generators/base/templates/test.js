@@ -7,7 +7,14 @@ require('babel-core/register')({
 global.Promise = require('bluebird')
 const supertest = require('co-supertest')
 const testRunner = require('bandage-runner')
+const sinon = require('sinon')
+
 const testHelper = require('./test/helper')
+const hashHelper = require('./src/helper/hash')
+
+// stub password hashing
+sinon.stub(hashHelper, 'get', (pass) => Promise.resolve(pass))
+sinon.stub(hashHelper, 'verify', (stored, pass) => Promise.resolve(pass == stored))
 
 const api = require('./src/api')
 const db = require('./src/helper/db')
@@ -24,4 +31,7 @@ if (file) {
 
 const testParams = [request, helper]
 
-testRunner(testParams, file, db.disconnect)
+testRunner(testParams, file, () => {
+    db.disconnect()
+    require('./src/model').sequelize.close()
+})

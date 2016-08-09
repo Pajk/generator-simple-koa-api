@@ -1,5 +1,3 @@
-const path = require('path')
-
 module.exports = {
     name: 'API',
     port: process.env.PORT || 3000,

@@ -1,2 +1,7 @@
 PG_URL=postgresql://localhost/<%= DATABASE_NAME %>?ssl=false
 NODE_ENV=development
+AWS_ACCESS_KEY_ID=<aws access id>
+AWS_SECRET_ACCESS_KEY=<aws secret access key>
+S3_BUCKET=<%= DATABASE_NAME %>-dev
+FACEBOOK_APP_ID=<app id>
+FACEBOOK_APP_ACCESS_TOKEN=<appid>|<secret token>

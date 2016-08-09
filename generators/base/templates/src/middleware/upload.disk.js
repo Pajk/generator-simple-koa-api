@@ -61,7 +61,7 @@ module.exports = function (options) {
         await new Promise((resolve, reject) => {
             const form = new multiparty.Form(options.multiparty)
             let error
-            let jobs = []
+            const jobs = []
 
             form.on('file', (name, file) => {
 
@@ -107,7 +107,7 @@ module.exports = function (options) {
                 jobs.push(job)
             })
 
-            form.on('field', (name, field) => {
+            form.on('field', () => {
                 // ignore fields
             })
 

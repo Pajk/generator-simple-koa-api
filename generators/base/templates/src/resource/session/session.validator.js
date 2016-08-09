@@ -1,26 +1,9 @@
-const v = require('validator')
-const baseValidator = require('../../helper/validator')
+const Joi = require('joi')
+const baseValidator = require('../../helper/validator.joi')
 
-const rules = {
-    email: [
-        [
-            'Email can be max 200 characters long',
-            v.isLength, 5, 200
-        ],
-        [
-            'Email is not valid',
-            v.isEmail
-        ]
-    ],
-    password: [
-        'Password must be at least 7 characters long',
-        v.isLength, 7, 100
-    ]
-}
+const schema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(7).max(100).required()
+})
 
-const required = {
-    email: 'Email is required',
-    password: 'Password is required'
-}
-
-module.exports.validate = baseValidator.create(rules, required)
+module.exports = baseValidator.create(schema)

@@ -26,15 +26,15 @@ const sharp = require('sharp')
  * When `options.transform` is used the middleware can produce and upload more than one
  * file per file in the multipart request. For each transform object
  *
- * @param options.access_key_id
+ * @param options.aws.access_key_id
  *
  *      AWS_ACCESS_KEY_ID to configure AWS SDK
  *
- * @param options.secret_access_key
+ * @param options.aws.secret_access_key
  *
  *      AWS_SECRET_ACCESS_KEY to configure AWS SDK
  *
- * @param options.bucket
+ * @param options.aws.bucket
  *
  *      Amazon S3 bucket
  *
@@ -72,8 +72,8 @@ const sharp = require('sharp')
 module.exports = function (options) {
 
     const s3Client = new aws.S3({
-        accessKeyId: options.access_key_id,
-        secretAccessKey: options.secret_access_key
+        accessKeyId: options.aws.access_key_id,
+        secretAccessKey: options.aws.secret_access_key
     })
 
     // Check white list and delete files which were not expected
@@ -187,7 +187,9 @@ module.exports = function (options) {
             }
             let fileSize = 0
             const handler = (err, data) => {
-                if (err) reject(err)
+                if (err) {
+                    return reject(err)
+                }
                 resolve({
                     etag: data.ETag,
                     url: data.Location,
@@ -197,7 +199,7 @@ module.exports = function (options) {
 
             const managedUpload = s3Client.upload(params, options, handler)
 
-            managedUpload.on('httpUploadProgress', function(evt) {
+            managedUpload.on('httpUploadProgress', function (evt) {
                 console.log('Progress:', evt.loaded, '/', evt.total)
                 fileSize = evt.total
             })
@@ -220,6 +222,10 @@ module.exports = function (options) {
         // options.urlBase = options.urlBase || `https://${options.bucket}.s3.amazonaws.com`
         options.defaultContentType =  options.defaultContentType || 'image/jpeg'
 
+        if (!options.aws) {
+            throw new Error('[upload.s3] Missing AWS config')
+        }
+
         await new Promise((resolve, reject) => {
             const form = new multiparty.Form(options)
             const errors = []
@@ -231,7 +237,7 @@ module.exports = function (options) {
                     originalFilename: part.filename,
                     size: part.byteCount,
                     contentType: part.headers['content-type'] || options.defaultContentType,
-                    bucket: options.bucket
+                    bucket: options.aws.bucket
                 }
 
                 if (ignoreFile(options, info)) {
@@ -252,7 +258,7 @@ module.exports = function (options) {
                 jobs.push(createJob())
             })
 
-            form.on('field', function() { /* ignore fields */ })
+            form.on('field', function () { /* ignore fields */ })
 
             form.on('error', reject)
 

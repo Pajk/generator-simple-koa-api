@@ -5,18 +5,16 @@ const upload = require('../../middleware/upload.s3')
 const userConfig = require('../../config/user')
 const awsConfig = require('../../config/aws')
 
-router.post('create_user', '/users', controller.create)
+router.post('createUser', '/users', controller.create)
 
-router.post('create_avatar', '/users/avatar', upload({
+router.post('createAvatar', '/users/avatar', upload({
     allowedFiles: ['file'],
     maxFileSize: userConfig.avatar_max_size_mb * 1024 * 1024,
     destination: userConfig.avatar_destination,
     transform: [{
         resize: { width: 500, height: 500 }
     }],
-    bucket: awsConfig.bucket,
-    access_key_id: awsConfig.access_key_id,
-    secret_access_key: awsConfig.secret_access_key
+    aws: awsConfig
 }), controller.uploadAvatar)
 
 router.get('/users', controller.renderCreate)

@@ -1,0 +1,190 @@
+swagger: "2.0"
+info:
+  version: 1.0.0
+  title: SampleAPI
+  description: Sample API
+host: sample-api.herokuapp.com
+basePath: /
+schemes:
+  - https
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /users:
+    post:
+      description: Creates a new user.
+      operationId: createUser
+      parameters:
+        - name: user
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        200:
+          description: success
+          schema:
+            $ref: '#/definitions/Session'
+        422:
+          description: validation error
+          schema:
+            $ref: '#/definitions/Error'
+  /users/avatar:
+    post:
+      description: Upload avatar image
+      operationId: uploadAvatar
+      responses:
+        200:
+          description: success
+          schema:
+            properties:
+              url:
+                type: string
+
+
+  /profile:
+    get:
+      description: Get authenticated user profile.
+      operationId: getProfile
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: profile response
+          schema:
+            $ref: '#/definitions/ReadProfile'
+        default:
+          description: unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      description: Update authenticated user profile.
+      operationId: updateProfile
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: update profile response
+          schema:
+            $ref: '#/definitions/WriteProfile'
+
+  /session:
+    post:
+      description: Login user.
+      operationId: createSession
+      parameters:
+        - name: session
+          in: body
+          required: true
+          schema:
+            properties:
+              email:
+                type: string
+              password:
+                type: string
+                format: password
+      responses:
+        201:
+          description: session response
+          schema:
+            $ref: '#/definitions/Session'
+        403:
+          description: invalid credentials
+    delete:
+      description: Logout user.
+      operationId: deleteSession
+      security:
+        - Bearer: []
+      responses:
+        204:
+          description: logout response
+
+definitions:
+  ReadProfile:
+    allOf:
+      - $ref: '#/definitions/WriteProfile'
+      - properties:
+          last_login:
+            type: string
+            format: dateTime
+          created_at:
+            type: string
+            format: dateTime
+          updated_at:
+            type: string
+            format: dateTime
+          reg_ip:
+            type: string
+  WriteProfile:
+    allOf:
+      - $ref: '#/definitions/User'
+      - properties:
+          address:
+            $ref: '#/definitions/Address'
+          avatar_url:
+            type: string
+  User:
+    required:
+      - first_name
+      - last_name
+      - email
+      - password
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+        format: password
+  Session:
+    properties:
+      id:
+        type: number
+        description: user id
+      token:
+        type: string
+        description: session token
+  Address:
+    required:
+      - line1
+      - city
+      - state
+      - country
+      - zip
+    properties:
+      line1:
+        type: string
+      line2:
+        type: string
+      city:
+        type: string
+      state:
+        type: string
+      country:
+        type: string
+      zip:
+        type: string
+
+  Error:
+    required:
+      - status_code
+      - message
+      - errors
+    properties:
+      status_code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      errors:
+        type: object

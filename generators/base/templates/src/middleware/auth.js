@@ -9,7 +9,7 @@ module.exports = function (options = {}) {
             return await next()
         }
 
-        let session_token,
+        let sessionToken,
             decoded
 
         ctx.state = ctx.state || {}
@@ -29,16 +29,16 @@ module.exports = function (options = {}) {
         const hash = parts[1]
 
         if (/^Bearer$/i.test(scheme)) {
-            session_token = hash
+            sessionToken = hash
         }
 
-        if (!session_token) {
+        if (!sessionToken) {
             ctx.log.debug('Missing authorization token')
             ctx.throw(401, msg.auth_error)
         }
 
         try {
-            decoded = await token.verify(session_token)
+            decoded = await token.verify(sessionToken)
         } catch (e) {
             ctx.log.debug('Invalid Authorization token.')
             ctx.throw(401, msg.auth_error)
@@ -49,16 +49,15 @@ module.exports = function (options = {}) {
             ctx.throw(401, msg.auth_error)
         }
 
-        const current_user = await userData.getUserByToken(decoded.db_token)
-        if (current_user === false) {
+        const currentUser = await userData.getUserByToken(decoded.db_token)
+        if (!currentUser) {
             ctx.log.debug('Session is no longer valid.')
             ctx.throw(401, msg.auth_error)
         }
 
-        ctx.state.session_token = session_token
-        ctx.state.session_db_token = decoded.db_token
-        ctx.state.current_user = current_user
-
+        ctx.state.sessionToken = sessionToken
+        ctx.state.sessionDbToken = decoded.db_token
+        ctx.state.user = currentUser
         await next()
     }
 }

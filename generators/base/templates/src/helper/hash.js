@@ -1,5 +1,5 @@
 const credential = require('credential')
-const pw = credential({ work: 0.4 })
+const pw = credential({ work: 0.1 })
 
 const helper = {}
 

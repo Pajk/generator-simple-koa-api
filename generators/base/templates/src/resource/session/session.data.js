@@ -1,21 +1,22 @@
-const db = require('../../helper/db')
+const { Session } = require('../../model')
 
 module.exports = {
 
-    async create (user_id, db_token, expires_at) {
-        if (!expires_at) {
+    async create (userId, dbToken, expiresAt) {
+        if (!expiresAt) {
             throw new Error('Missing expires_at attribute')
         }
 
-        return await db.query([
-            'INSERT INTO "user_token" (user_id, token, expires_at)',
-            'VALUES (?, ?, to_timestamp(?))', user_id, db_token, expires_at
-        ])
+        return await Session.create({
+            user_id: userId,
+            token: dbToken,
+            expires_at: expiresAt
+        })
     },
 
-    async delete (db_token) {
-        await db.query([
-            'DELETE FROM "user_token" WHERE token = ?', db_token
-        ])
+    async delete (dbToken) {
+        await Session.destroy({
+            where: { token: dbToken }
+        })
     }
 }

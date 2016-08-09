@@ -1,52 +1,57 @@
-const db = require('../../helper/db')
-const paginationHelper = require('../../helper/pagination')
+const { User, Address, Session, sequelize } = require('../../model')
 
-const selection = [
-    'id',
-    'first_name',
-    'last_name',
-    'created_at',
-    'email'
-]
-
-const TABLE = '"user"'
+const includes = {
+    address: {
+        model: Address,
+        attributes: {
+            exclude: ['created_at', 'deleted_at', 'id', 'updated_at', 'user_id']
+        }
+    }
+}
 
 module.exports = {
 
     async createUser (data) {
-        const allowed = ['email', 'password', 'first_name', 'last_name']
-        const insertion = db.filterFields(allowed, data)
-        const result = await db.query([
-            'INSERT INTO', TABLE, 'VALUES ?', insertion, 'RETURNING id'
-        ])
+        const newUser = await User.create(data)
 
-        return result.pop().id
+        return newUser.id
     },
 
-    async getUsers (pagination) {
-        const pagination_query = paginationHelper.getQueryParts(pagination)
+    async updateUser (userId, data) {
+        return await User.update(data, { where: { id: userId } })
+    },
 
-        return await db.query([
-            'SELECT', selection, 'FROM', TABLE,
-            ...pagination_query.limit
-        ])
+    async findUser (where, options = {}) {
+        options.where =  where
+
+        if (options.include) {
+            options.include = options.include.map(key => {
+                if (includes.hasOwnProperty(key)) {
+                    return includes[key]
+                }
+                return key
+            })
+        }
+
+        return await User.findOne(options)
     },
 
     async getUserByToken (token) {
-        const results = await db.query([
-            'SELECT ', selection, 'FROM', TABLE,
-            'WHERE id = (SELECT user_id FROM "user_token" WHERE token = ?)', token
-        ])
-
-        return results.length == 1 ? results.pop() : false
+        return await User.findOne({
+            attributes: User.attributes,
+            include: [{
+                model: Session,
+                where: { token }
+            }]
+        })
     },
 
     async getUserWithPasswordByEmail (email) {
-        const rows = await db.query([
-            'SELECT', selection.concat('password'), 'FROM', TABLE,
-            'WHERE lower(email) = lower(?)', email
-        ])
-
-        return rows.length == 1 ? rows.pop() : null
+        return await User.findOne({
+            where: sequelize.where(
+                sequelize.fn('lower', sequelize.col('email')),
+                email.toLowerCase()
+            )
+        })
     }
 }

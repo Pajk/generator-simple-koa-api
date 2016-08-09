@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const pg = require('pg')
 const buildQuery = require('simple-builder').pg
+const log = require('./logger')
 
 const config = require('../config/db')
 
@@ -13,11 +14,11 @@ const pool = new pg.Pool({
 
 const helper = {}
 
-helper.disconnect = function() {
+helper.disconnect = function () {
     pool.end().catch(console.error)
 }
 
-helper.getClient = function() {
+helper.getClient = function () {
     return pool.connect()
 }
 
@@ -27,25 +28,26 @@ const rethrow = function (err) {
     throw err
 }
 
-helper.query = async function (query, unescaped_values, client) {
+helper.query = async function (query, values, client) {
 
-    if (query && query.constructor === Array && !unescaped_values) {
+    if (query && query.constructor === Array && !values) {
         const built = helper.build(query)
         query = built.text
-        unescaped_values = built.values
+        values = built.values
+        log.trace({ query, values }, 'QUERY')
     }
 
     const result = client
-        ? await client.query(query, unescaped_values).catch(rethrow)
-        : await pool.query(query, unescaped_values).catch(rethrow)
+        ? await client.query(query, values).catch(rethrow)
+        : await pool.query(query, values).catch(rethrow)
 
     return result.rows
 }
 
 helper.build = buildQuery
 
-helper.filterFields = function(keys, data) {
-    return Object.keys(data).reduce(function(filtered, current) {
+helper.filterFields = function (keys, data) {
+    return Object.keys(data).reduce(function (filtered, current) {
 
         if (_.includes(keys, current)) {
             filtered[current] = data[current]
@@ -54,7 +56,7 @@ helper.filterFields = function(keys, data) {
     }, {})
 }
 
-helper.formatDate = function(date) {
+helper.formatDate = function (date) {
     return date.toISOString()
 }
 

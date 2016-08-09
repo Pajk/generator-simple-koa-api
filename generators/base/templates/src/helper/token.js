@@ -5,12 +5,12 @@ const ALGORITHM = 'HS256'
 
 const helper = {}
 
-helper.create = function (claims, expires_in = config.expires_in_seconds) {
-    return new Promise(function(resolve, reject) {
+helper.create = function (claims, expiresIn = config.expires_in_seconds) {
+    return new Promise(function (resolve, reject) {
         jwt.sign(claims, config.secret, {
-            expiresIn: expires_in,
+            expiresIn: expiresIn,
             algorithm: ALGORITHM
-        }, function(err, token) {
+        }, function (err, token) {
             if (err) return reject(err)
             resolve(token)
         })
@@ -22,11 +22,11 @@ helper.verify = function (token) {
         throw new Error('Invalid token')
     }
 
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         jwt.verify(token, config.secret, {
             complete: true,
             algorithms: [ALGORITHM]
-        }, function(err, token) {
+        }, function (err, token) {
             if (err) return reject(err)
             resolve(token)
         })

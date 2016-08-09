@@ -14,19 +14,8 @@ module.exports = {
             return await userData.createUser(data)
         } catch (e) {
             log.trace({type: 'signup_error', err: e})
-            const err = new Error()
-            err.message = msg.signup_error
-
-            if (e.constraint == 'user_email_key') {
-                err.status = 422
-                err.validation_messages = {
-                    email: msg.email_already_registered
-                }
-                throw err
-            }
-
-            err.status = 500
-            throw err
+            e.message = msg.signup_error
+            throw e
         }
     },
 
@@ -34,6 +23,8 @@ module.exports = {
         const user = await userData.getUserWithPasswordByEmail(email)
 
         if (user && await hash.verify(user.password, password) == true) {
+            await user.update({ last_login: new Date() })
+
             return user
         }
 

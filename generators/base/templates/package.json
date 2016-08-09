@@ -26,7 +26,7 @@
     "type": "git",
     "url": "https://github.com/YOU/YOURAPI.git"
   },
-  "license": "UNLICENSED",
+  "license": "proprietary",
   "private": true,
   "dependencies": {
     "aws-sdk": "2.4.7",
@@ -41,6 +41,7 @@
     "db-migrator": "^1.0.3",
     "dotenv": "^2.0.0",
     "flat-transform": "^4.1.1",
+    "joi": "9.0.4",
     "jsonwebtoken": "7.0.0",
     "koa": "2.0.0",
     "koa-bodyparser": "3.1.0",
@@ -56,6 +57,10 @@
     "node-uuid": "1.4.7",
     "pg": "6.0.2",
     "pg-bluebird": "^1.0.8",
+    "pg-hstore": "2.3.2",
+    "request": "2.74.0",
+    "request-promise": "4.1.0",
+    "sequelize": "3.23.6",
     "sharp": "0.15.1",
     "simple-builder": "^2.3.2",
     "thenify": "^3.2.0",
@@ -68,6 +73,7 @@
     "co-supertest": "git://github.com/pajk/co-supertest.git#22fb0e691bf5e75504675afeee800e52b5a1f9f2",
     "eslint": "3.0.1",
     "istanbul": "^0.4.0",
+    "sinon": "1.17.5",
     "supertest": "^1.1.0",
     "tap-spec": "^4.1.0"
   },

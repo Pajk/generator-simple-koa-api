@@ -65,6 +65,7 @@ module.exports = generators.Base.extend({
       this.directory('src')
       this.directory('migrations')
       this.directory('test')
+      this.directory('doc')
 
       this.copy('_gitignore', '.gitignore')
       copyTemplate('_env', '.env')

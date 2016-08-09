@@ -1,31 +1,31 @@
-const userService = require('../user/user.service')
+const validate = require('./session.validator')
 const sessionService = require('./session.service')
-const loginValidator = require('./session.validator')
+const userService = require('../user/user.service')
 
 const msg = require('../../config/msg')
 
 module.exports = {
 
     async create (ctx) {
-        loginValidator.validate(ctx.request.body, msg.invalid_credentials)
+        const body = validate(ctx.request.body, msg.invalid_credentials)
 
-        const current_user = await userService.login(ctx.request.body.email, ctx.request.body.password)
+        const user = await userService.login(body.email, body.password)
 
-        if (!current_user) {
+        if (!user) {
             ctx.throw(403, msg.invalid_credentials)
         }
 
-        const session_token = await sessionService.create(current_user.id)
+        const sessionToken = await sessionService.create(user.id)
 
         ctx.status = 201
         ctx.body = {
-            id: current_user.id,
-            token: session_token
+            id: user.id,
+            token: sessionToken
         }
     },
 
     async delete (ctx) {
-        await sessionService.delete(ctx.state.session_db_token)
+        await sessionService.delete(ctx.state.sessionDbToken)
         ctx.status = 204
     }
 }

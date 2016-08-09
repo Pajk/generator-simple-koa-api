@@ -1,20 +1,27 @@
 const koaSend = require('koa-send')
 
 const msg = require('../../config/msg')
-const userValidator = require('./user.validator')
+const validate = require('./user.validator')
+const userService = require('./user.service')
+const sessionService = require('../session/session.service')
 
 module.exports = {
 
     async create (ctx) {
-        userValidator.validate(ctx.request.body, msg.signup_error)
+        const body = validate(ctx.request.body, {
+            message: msg.signup_error,
+            context: {
+                ip: ctx.ip
+            }
+        })
 
-        const user_id = await ctx.app.user.create(ctx.request.body)
-        const session_token = await ctx.app.session.create(user_id)
+        const userId = await userService.create(body)
+        const sessionToken = await sessionService.create(userId)
 
         ctx.status = 201
         ctx.body = {
-            id: user_id,
-            token: session_token
+            id: userId,
+            token: sessionToken
         }
     },
 
@@ -23,14 +30,13 @@ module.exports = {
     },
 
     async uploadAvatar (ctx) {
-        const name = 'file'
-        console.log(ctx.request.body.files)
+        const fieldName = 'file'
 
-        if (!ctx.request.body.files || !ctx.request.body.files[name]) {
+        if (!ctx.request.body.files || !ctx.request.body.files[fieldName]) {
             ctx.throw(422, 'File to upload not provided')
         }
 
-        const file = ctx.request.body.files[name]
+        const file = ctx.request.body.files[fieldName]
         ctx.log.info(file, 'file uploaded')
 
         ctx.body = {

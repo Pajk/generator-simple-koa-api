@@ -3,25 +3,25 @@ const qs = require('querystring')
 const helper = {}
 
 helper.getQueryParts = function (pagination) {
-    const query_parts = { conditions: [], limit: [] }
+    const queryParts = { conditions: [], limit: [] }
     if (!pagination) {
-        return query_parts
+        return queryParts
     }
 
     if (pagination.limit) {
-        query_parts.limit.push('LIMIT ?')
-        query_parts.limit.push(pagination.limit)
+        queryParts.limit.push('LIMIT ?')
+        queryParts.limit.push(pagination.limit)
     }
 
     if (pagination.offset) {
-        query_parts.limit.push('OFFSET ?')
-        query_parts.limit.push(pagination.offset)
+        queryParts.limit.push('OFFSET ?')
+        queryParts.limit.push(pagination.offset)
     }
 
-    return query_parts
+    return queryParts
 }
 
-const constructPageLink = function(pathname, query, pagination) {
+const constructPageLink = function (pathname, query, pagination) {
     return pathname + '?' + qs.stringify(Object.assign({}, query, pagination))
 }
 
@@ -37,8 +37,8 @@ helper.formatResults = function (data, pathname, query, {limit, offset, page } =
         } else {
             output.next_page = constructPageLink(pathname, query, { limit, offset: limit + offset })
 
-            const timestamp_offset = data[ data.length - 1 ].created_at.getTime()
-            output.next_page_timestamp = constructPageLink(pathname, query, { limit, timestamp_offset })
+            const timestampOffset = data[ data.length - 1 ].created_at.getTime()
+            output.next_page_timestamp = constructPageLink(pathname, query, { limit, timestampOffset })
         }
     }
 
