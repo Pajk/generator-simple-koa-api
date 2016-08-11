@@ -1,5 +1,5 @@
-module.exports = function () {
-    return async (ctx, next) => {
+module.exports = function paginationFactory () {
+    return async function paginationMiddleware (ctx, next) {
         const limit = parseInt(ctx.query.limit) || 0
         const page = parseInt(ctx.query.page) || 1
         const offset = parseInt(ctx.query.offset) || (page - 1) * limit || 0
@@ -9,6 +9,6 @@ module.exports = function () {
 
         ctx.state.pagination = { limit, offset, timestamp_offset: timestampOffset, page }
 
-        await next()
+        return await next()
     }
 }

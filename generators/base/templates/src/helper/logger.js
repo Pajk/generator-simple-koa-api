@@ -1,4 +1,5 @@
 const bunyan = require('bunyan')
+const config = require('../config/log.js')
 
 // log.trace, log.debug, log.info, log.warn, log.error, and log.fatal
 
@@ -7,7 +8,7 @@ module.exports = bunyan.createLogger({
     serializers: bunyan.stdSerializers,
     streams: [
         {
-            level: process.env.LOG_LEVEL || 'info',
+            level: config.logLevel,
             stream: process.stdout
         }
     ]

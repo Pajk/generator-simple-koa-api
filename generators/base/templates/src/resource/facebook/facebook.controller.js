@@ -15,7 +15,7 @@ module.exports = {
 
         const userId = await facebookService.login(fbUserId, fbAccessToken)
 
-        if (userId == false) {
+        if (userId === false) {
             ctx.throw(403, 'Please sign up first.')
         }
 
@@ -24,7 +24,7 @@ module.exports = {
         ctx.status = 200
         ctx.body = {
             id: userId,
-            token: token
+            token
         }
     },
 

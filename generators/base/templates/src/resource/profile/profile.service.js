@@ -5,7 +5,7 @@ module.exports = {
 
     async get (userId) {
         return await userData.findUser({ id: userId }, {
-            include: [ 'address' ]
+            include: ['address']
         })
     },
 

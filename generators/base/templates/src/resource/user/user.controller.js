@@ -37,6 +37,7 @@ module.exports = {
         }
 
         const file = ctx.request.body.files[fieldName]
+
         ctx.log.info(file, 'file uploaded')
 
         ctx.body = {

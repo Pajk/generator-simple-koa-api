@@ -1,5 +1,5 @@
 {
-  "name": "<%= API_NAME %>",
+  "name": "API_NAME",
   "version": "0.1.0",
   "description": "<%= API_NAME %>",
   "main": "src/startup.js",
@@ -68,10 +68,11 @@
     "validator": "^5.2.0"
   },
   "devDependencies": {
+    "@strv/eslint-config-javascript": "5.1.0",
     "babel-eslint": "6.1.2",
     "bandage-runner": "^1.0.0",
     "co-supertest": "git://github.com/pajk/co-supertest.git#22fb0e691bf5e75504675afeee800e52b5a1f9f2",
-    "eslint": "3.0.1",
+    "eslint": "3.2.2",
     "istanbul": "^0.4.0",
     "sinon": "1.17.5",
     "supertest": "^1.1.0",

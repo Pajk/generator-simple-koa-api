@@ -22,7 +22,7 @@ module.exports = {
     },
 
     async findUser (where, options = {}) {
-        options.where =  where
+        options.where = where
 
         if (options.include) {
             options.include = options.include.map(key => {
@@ -36,7 +36,7 @@ module.exports = {
         return await User.findOne(options)
     },
 
-    async getUserByToken (token) {
+    async findUserByToken (token) {
         return await User.findOne({
             attributes: User.attributes,
             include: [{
@@ -46,7 +46,7 @@ module.exports = {
         })
     },
 
-    async getUserWithPasswordByEmail (email) {
+    async findUserByEmail (email) {
         return await User.findOne({
             where: sequelize.where(
                 sequelize.fn('lower', sequelize.col('email')),

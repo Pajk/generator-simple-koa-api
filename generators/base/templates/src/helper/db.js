@@ -12,95 +12,102 @@ const pool = new pg.Pool({
     idleTimeoutMillis: config.pool_timeout
 })
 
-const helper = {}
-
-helper.disconnect = function () {
-    pool.end().catch(console.error)
-}
-
-helper.getClient = function () {
-    return pool.connect()
-}
-
-// pg query doesn't throw the original exception when the catch is not used
-// not sure what is causing this
-const rethrow = function (err) {
+/**
+ * pg query doesn't throw the original exception when the catch is not used
+ * not sure what is causing this
+ * @param  {Error} err Error to throw
+ * @return {undefined}
+ */
+function rethrow (err) {
     throw err
 }
 
-helper.query = async function (query, values, client) {
+module.exports = {
+    disconnect () {
+        pool.end().catch(log.error)
+    },
 
-    if (query && query.constructor === Array && !values) {
-        const built = helper.build(query)
-        query = built.text
-        values = built.values
-        log.trace({ query, values }, 'QUERY')
-    }
+    getClient () {
+        return pool.connect()
+    },
 
-    const result = client
-        ? await client.query(query, values).catch(rethrow)
-        : await pool.query(query, values).catch(rethrow)
+    async query (query, values, client) {
+        if (query && query.constructor === Array && !values) {
+            const built = buildQuery(query)
 
-    return result.rows
-}
-
-helper.build = buildQuery
-
-helper.filterFields = function (keys, data) {
-    return Object.keys(data).reduce(function (filtered, current) {
-
-        if (_.includes(keys, current)) {
-            filtered[current] = data[current]
+            query = built.text
+            values = built.values
+            log.trace({ query, values }, 'QUERY')
         }
-        return filtered
-    }, {})
-}
 
-helper.formatDate = function (date) {
-    return date.toISOString()
-}
+        const result = client
+            ? await client.query(query, values).catch(rethrow)
+            : await pool.query(query, values).catch(rethrow)
 
-helper.DESC = false
-helper.ASC = true
+        return result.rows
+    },
 
-helper.withTransaction = async function (runner) {
-    const client = await pool.connect()
+    build: buildQuery,
 
-    const rollback = async function (err) {
-        try {
-            await client.query('ROLLBACK').catch(rethrow)
-        } catch (err) {
-            console.error('[INTERNAL_ERROR] Could not rollback transaction, removing from pool', err)
-            client.release(err)
+    filterFields (keys, data) {
+        return Object.keys(data).reduce((filtered, current) => {
+            if (_.includes(keys, current)) {
+                filtered[current] = data[current]
+            }
+            return filtered
+        }, {})
+    },
+
+    formatDate (date) {
+        return date.toISOString()
+    },
+
+    DESC: false,
+    ASC: true,
+
+    async withTransaction (runner) {
+        const client = await pool.connect()
+
+        /**
+         * Rollback the transaction
+         * @param  {Error} err Error caused the rollback
+         * @return {undefined}
+         */
+        async function rollback (err) {
+            try {
+                await client.query('ROLLBACK').catch(rethrow)
+            } catch (error) {
+                log.error(err, 'Could not rollback transaction, removing from pool')
+                client.release(error)
+                throw error
+            }
+            client.release()
+
             throw err
+        }
+
+        try {
+            await client.query('BEGIN').catch(rethrow)
+        } catch (err) {
+            log.error(err, 'There was an error calling BEGIN')
+            return await rollback(err)
+        }
+
+        let result
+
+        try {
+            result = await runner(client)
+        } catch (err) {
+            return await rollback(err)
+        }
+
+        try {
+            await client.query('COMMIT').catch(rethrow)
+        } catch (err) {
+            return await rollback(err)
         }
         client.release()
 
-        throw err
+        return result
     }
-
-    try {
-        await client.query('BEGIN').catch(rethrow)
-    } catch (err) {
-        console.error('[INTERNAL_ERROR] There was an error calling BEGIN', err)
-        return await rollback(err)
-    }
-
-    let result
-    try {
-        result = await runner(client)
-    } catch (err) {
-        return await rollback(err)
-    }
-
-    try {
-        await client.query('COMMIT').catch(rethrow)
-    } catch (err) {
-        return await rollback(err)
-    }
-    client.release()
-
-    return result
 }
-
-module.exports = helper

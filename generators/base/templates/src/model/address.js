@@ -1,14 +1,22 @@
-module.exports = function (sequelize, T) {
-
+module.exports = function addressModelInit (sequelize, TYPE) {
     const Address = sequelize.define('address', {
-        line1       : T.STRING,
-        line2       : T.STRING,
-        user_id     : T.INTEGER,
-        zip         : T.STRING,
-        city        : T.STRING,
-        country     : T.STRING,
-        state       : T.STRING
+
+        line1: TYPE.STRING,
+
+        line2: TYPE.STRING,
+
+        user_id: TYPE.INTEGER,
+
+        zip: TYPE.STRING,
+
+        city: TYPE.STRING,
+
+        country: TYPE.STRING,
+
+        state: TYPE.STRING
+
     }, {
+
         classMethods: {
             associate: models => {
                 Address.belongsTo(models.User)

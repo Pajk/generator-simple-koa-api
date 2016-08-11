@@ -6,29 +6,38 @@ const userService = require('../user/user.service')
 const userData = require('../user/user.data')
 const facebookData = require('./facebook.data')
 
+/**
+ * @param  {string} fbUserId Facebook user id
+ * @param  {string} token Facebook access token
+ * @return {undefined} nothing
+ */
 async function validateAccessToken (fbUserId, token) {
     const data = await request({
-        url: `https://graph.facebook.com/debug_token?input_token=${token}&access_token=${config.app_access_token}`,
+        url: 'https://graph.facebook.com/debug_token?'
+            + `input_token=${token}&access_token=${config.app_access_token}`,
         json: true
     }).then(response => response.data)
 
-    if (data.is_valid != true || data.app_id != config.app_id || data.user_id != fbUserId) {
-        log.debug({
-            url: `https://graph.facebook.com/debug_token?input_token=${token}&access_token=${config.app_access_token}`,
-            data, token, fbUserId
-        }, 'invalid facebook login')
+    if (data.is_valid !== true || data.app_id !== config.app_id || data.user_id !== fbUserId) {
         const err = new Error('Facebook login data are not valid.')
+
+        log.debug({ data, token, fbUserId }, 'invalid facebook login')
         err.status = 403
         throw err
     }
 
     if (data.scopes.indexOf('email') < 0 || data.scopes.indexOf('public_profile') < 0) {
-        const err = new Error('We need access to your email and public profile in order to continue.')
+        const err = new Error(msg.facebook.permissions_needed)
+
         err.status = 403
         throw err
     }
 }
 
+/**
+ * @param  {string} token Facebook access token
+ * @return {undefined}
+ */
 async function getUserInfo (token) {
     return await request({
         url: `https://graph.facebook.com/me?fields=email,name&access_token=${token}`,
@@ -44,8 +53,7 @@ module.exports = {
         let userId = await facebookData.updateAccessToken(fbUserId, fbAccessToken)
 
         // if fb user is not in our db try to find user with the same email address
-        if (userId == false) {
-
+        if (userId === false) {
             const fbInfo = await getUserInfo(fbAccessToken)
             const user = await userData.findUser({ email: fbInfo.email })
 
@@ -68,6 +76,7 @@ module.exports = {
 
         if (userId) {
             const err = new Error(msg.facebook.already_signed_up)
+
             err.status = 403
             throw err
         }

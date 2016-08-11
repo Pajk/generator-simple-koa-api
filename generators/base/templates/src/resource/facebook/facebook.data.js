@@ -12,7 +12,7 @@ module.exports = {
             returning: true,
             raw: true
         }).spread((affectedCount, affectedRows) => {
-            if (affectedCount == 1) {
+            if (affectedCount === 1) {
                 return affectedRows[0].user_id
             }
 
@@ -27,13 +27,13 @@ module.exports = {
                 fb_user_id: fbUserId,
                 fb_access_token: fbAccessToken
             })
-        } catch(e) {
+        } catch (err) {
             log.error({
                 user_id: userId,
                 type: 'facebook signup',
-                error: e
+                error: err
             })
-            throw e
+            throw err
         }
     },
 

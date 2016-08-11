@@ -1,63 +1,88 @@
-const msg = require('../config/msg')
 const userData = require('../resource/user/user.data')
 const token = require('../helper/token')
+const AuthError = require('../error/auth.error')
 
-module.exports = function (options = {}) {
-    return async (ctx, next) => {
-        // public route and no authorization header -> let it pass
-        if (options.public && (!ctx.header.authorization || ctx.header.authorization == 'Bearer ')) {
-            return await next()
+module.exports = function authMiddlewareFactory (options = {}) {
+    /**
+     * @param  {string} authorizationHeader Authorization header content
+     * @return {bool} whether public access should be allowed
+     */
+    function allowPublicAccess (authorizationHeader) {
+        return options.public
+            && (!authorizationHeader || authorizationHeader === 'Bearer ')
+    }
+
+    /**
+     * @param  {string} sessionToken Session token
+     * @return {object} Session token claims
+     */
+    async function decodeToken (sessionToken) {
+        try {
+            return await token.verify(sessionToken)
+        } catch (err) {
+            throw new AuthError()
+        }
+    }
+
+    /**
+     * @param  {string} authorizationHeader Authorization header
+     * @return {string} Session token
+     */
+    function extractTokenFromHeader (authorizationHeader) {
+        if (!authorizationHeader) {
+            throw new AuthError()
         }
 
-        let sessionToken,
-            decoded
+        const parts = authorizationHeader.split(' ')
 
-        ctx.state = ctx.state || {}
-
-        if (!ctx.header.authorization) {
-            ctx.log.debug('No Authorization header found.')
-            ctx.throw(401, msg.auth_error)
-        }
-
-        const parts = ctx.header.authorization.split(' ')
         if (parts.length !== 2) {
-            ctx.log.debug('Bad Authorization header format.')
-            ctx.throw(401, msg.auth_error)
+            throw new AuthError()
         }
 
         const scheme = parts[0]
-        const hash = parts[1]
+        const sessionToken = parts[1]
 
-        if (/^Bearer$/i.test(scheme)) {
-            sessionToken = hash
+        if (/^Bearer$/i.test(scheme) === false) {
+            throw new AuthError()
         }
 
-        if (!sessionToken) {
-            ctx.log.debug('Missing authorization token')
-            ctx.throw(401, msg.auth_error)
+        return sessionToken
+    }
+
+    /**
+     * @param  {string} dbToken Session's database token
+     * @return {object} Loaded user instance
+     */
+    async function findUser (dbToken) {
+        if (typeof dbToken !== 'string') {
+            throw new AuthError()
         }
 
-        try {
-            decoded = await token.verify(sessionToken)
-        } catch (e) {
-            ctx.log.debug('Invalid Authorization token.')
-            ctx.throw(401, msg.auth_error)
-        }
+        const currentUser = await userData.findUserByToken(dbToken)
 
-        if (typeof decoded.db_token !== 'string') {
-            ctx.log.debug('Invalid Authorization token.')
-            ctx.throw(401, msg.auth_error)
-        }
-
-        const currentUser = await userData.getUserByToken(decoded.db_token)
         if (!currentUser) {
-            ctx.log.debug('Session is no longer valid.')
-            ctx.throw(401, msg.auth_error)
+            throw new AuthError()
         }
 
+        return currentUser
+    }
+
+    return async function authMiddleware (ctx, next) {
+        if (allowPublicAccess(ctx.header.authorization)) {
+            return await next()
+        }
+
+        const sessionToken = extractTokenFromHeader(ctx.header.authorization)
+
+        const decoded = await decodeToken(sessionToken)
+
+        const currentUser = await findUser(decoded.db_token)
+
+        ctx.state = ctx.state || {}
         ctx.state.sessionToken = sessionToken
         ctx.state.sessionDbToken = decoded.db_token
         ctx.state.user = currentUser
-        await next()
+
+        return await next()
     }
 }

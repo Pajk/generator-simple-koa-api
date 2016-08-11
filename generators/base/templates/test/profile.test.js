@@ -1,27 +1,33 @@
 const profileRouter = require('../src/resource/profile/profile.router')
 
 module.exports = (should, request, helper) => {
+    should(`== ${__filename} ==`, function* test () {})
 
-    should('== ' + __filename + ' ==', function* () {})
-
-    should('Get user profile', function* (t) {
+    should('Get user profile', function* test (assert) {
         const user = yield helper.createUser()
-        const resp = yield helper.get(profileRouter.url('getProfile'), user, 200)
+        const resp = yield helper.request({
+            url: profileRouter.url('getProfile'),
+            user,
+            expect: 200
+        })
         const data = resp.body
 
-        t.ok(data, 'response contains user')
-        t.ok(data.email, 'email addresses')
-        t.ok(data.first_name, 'first name')
-        t.ok(data.last_name, 'last name')
+        assert.ok(data, 'response contains user')
+        assert.ok(data.email, 'email addresses')
+        assert.ok(data.first_name, 'first name')
+        assert.ok(data.last_name, 'last name')
     })
 
-    should('Fail to get profile using unauthorized request', function* (t) {
-        yield helper.get(profileRouter.url('getProfile'), null, 401)
+    should('Fail to get profile using unauthorized request', function* test (assert) {
+        yield helper.request({
+            url: profileRouter.url('getProfile'),
+            expect: 401
+        })
 
-        t.pass('server returns 401')
+        assert.pass('server returns 401')
     })
 
-    should('Update profile info', function* (t) {
+    should('Update profile info', function* test (assert) {
         const user = yield helper.createUser()
         const fields = {
             first_name: helper.randomString(),
@@ -35,20 +41,32 @@ module.exports = (should, request, helper) => {
                 country: helper.randomString()
             }
         }
-        let resp = yield helper.put(profileRouter.url('updateProfile'), user, fields, 200)
+        let resp = yield helper.request({
+            method: 'put',
+            url: profileRouter.url('updateProfile'),
+            user,
+            data: fields,
+            expect: 200
+        })
         const data = resp.body
 
-        t.ok(data, 'response contains user')
+        assert.ok(data, 'response contains user')
         for (const key of Object.keys(fields)) {
-            t.deepEqual(data[key], fields[key], key + ' updated')
+            assert.deepEqual(data[key], fields[key], `${key} updated`)
         }
 
-        resp = yield helper.put(profileRouter.url('updateProfile'), user, fields, 200)
+        resp = yield helper.request({
+            method: 'put',
+            url: profileRouter.url('updateProfile'),
+            user,
+            data: fields,
+            expect: 200
+        })
 
-        t.equal(resp.body.address_id, data.address_id, 'Address ID remained the same')
+        assert.equal(resp.body.address_id, data.address_id, 'Address ID remained the same')
     })
 
-    should('Allow to set profile avatar', function* (t) {
+    should('Allow to set profile avatar', function* test (assert) {
         const user = yield helper.createUser()
         const fields = {
             first_name: user.first_name,
@@ -56,36 +74,64 @@ module.exports = (should, request, helper) => {
             avatar_url: 'https://www.pictures.com/avatar'
         }
 
-        let resp = yield helper.put(profileRouter.url('updateProfile'), user, fields, 200)
-        t.equal(resp.body.avatar_url, fields.avatar_url, 'Avatar url changed')
+        const resp = yield helper.request({
+            method: 'put',
+            url: profileRouter.url('updateProfile'),
+            user,
+            data: fields,
+            expect: 200
+        })
+
+        assert.equal(resp.body.avatar_url, fields.avatar_url, 'Avatar url changed')
     })
 
-    should('Contain user metadata', function* (t) {
+    should('Contain user metadata', function* test (assert) {
         const user = yield helper.createUser()
-        let resp = yield helper.get(profileRouter.url('getProfile'), user, 200)
+        let resp = yield helper.request({
+            url: profileRouter.url('getProfile'),
+            user,
+            expect: 200
+        })
         const data = resp.body
 
         // t.equal(data.subscription, '', '')
         // t.equal(data.num_properties, 0, 'Number of properties')
-        t.equal(data.reg_ip, '::ffff:127.0.0.1', 'Registration IP')
-        t.ok(data.last_login, 'Last login time')
-        t.ok(data.created_at, 'Created at time')
-        t.ok(data.updated_at, 'Updated at time')
+        assert.equal(data.reg_ip, '::ffff:127.0.0.1', 'Registration IP')
+        assert.ok(data.last_login, 'Last login time')
+        assert.ok(data.created_at, 'Created at time')
+        assert.ok(data.updated_at, 'Updated at time')
 
-        yield helper.put(profileRouter.url('updateProfile'), user, {
-            first_name: 'Pavel',
-            last_name: 'Xzzzkkk'
-        }, 200)
+        yield helper.request({
+            method: 'put',
+            url: profileRouter.url('updateProfile'),
+            user,
+            data: {
+                first_name: 'Pavel',
+                last_name: 'Xzzzkkk'
+            },
+            expect: 200
+        })
 
-        resp = yield helper.get(profileRouter.url('getProfile'), user, 200)
+        resp = yield helper.request({
+            url: profileRouter.url('getProfile'),
+            user,
+            expect: 200
+        })
 
-        t.notEqual(resp.body.updated_at, data.updated_at, 'Updated at time set after update')
+        assert.notEqual(resp.body.updated_at, data.updated_at, 'Updated at time set after update')
     })
 
-    should('Not allow to change email address', function* (t) {
+    should('Not allow to change email address', function* test (assert) {
         const user = yield helper.createUser()
         const fields = { first_name: 'abc', last_name: 'cdd', email: 'valid@email.com' }
-        const r = yield helper.put(profileRouter.url('updateProfile'), user, fields, 422)
-        t.ok(r.body.errors.email, 'Contains email error message')
+        const resp = yield helper.request({
+            method: 'put',
+            url: profileRouter.url('updateProfile'),
+            user,
+            data: fields,
+            expect: 422
+        })
+
+        assert.ok(resp.body.errors.email, 'Contains email error message')
     })
 }

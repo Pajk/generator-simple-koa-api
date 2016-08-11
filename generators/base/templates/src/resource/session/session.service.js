@@ -4,14 +4,22 @@ const sessionData = require('./session.data')
 const config = require('../../config/auth')
 const token = require('../../helper/token')
 
-const getExpiresAt = function (expiresIn) {
-    const nowUnixEpoch = Math.floor(new Date().getTime()/1000)
+/**
+ * @param  {number} expiresIn Session ttl in ms
+ * @return {number} Session expiration timestamp
+ */
+function getExpiresAt (expiresIn) {
+    const nowUnixEpoch = Math.floor(new Date().getTime() / 1000)
 
     return nowUnixEpoch + expiresIn
 }
 
-const getDbToken = function (userId) {
-    return (new Date().getTime()) + '-' + userId + '-' + uuid.v4()
+/**
+ * @param  {string} userId User id
+ * @return {string} Generated token meant to be stored in the database
+ */
+function getDbToken (userId) {
+    return `${new Date().getTime()}-${userId}-${uuid.v4()}`
 }
 
 

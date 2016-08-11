@@ -1,3 +1,4 @@
+/* eslint-disable no-process-env */
 module.exports = {
     connection_string: process.env.PG_URL || process.env.DATABASE_URL,
     pool_size_max: process.env.PG_POOL_SIZE_MAX || 8,

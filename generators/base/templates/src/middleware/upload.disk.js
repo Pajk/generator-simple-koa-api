@@ -4,9 +4,15 @@ const os = require('os')
 const uuid = require('node-uuid')
 const path = require('path')
 
-const deleteFile = function (file) {
+/**
+ * @param  {string} file Path to a file
+ * @return {undefined}
+ */
+function deleteFile (file) {
     fs.lstat(file.path, (err, stats) => {
-        if (err || !stats.isFile()) return
+        if (err || !stats.isFile()) {
+            return
+        }
         fs.unlink(file.path)
     })
 }
@@ -27,30 +33,34 @@ const deleteFile = function (file) {
  *
  * Does not support `multiple` upload.
  *
- * @param [options.allowedFiles] ()
+ * @param {object} options Upload settings
+ *
+ * @param {array} options.allowedFiles ()
  *
  *      Array of file names which are expected, all other files are ignored.
  *
- * @param [options.maxFileSize] (50 000 0000)
+ * @param {number} options.maxFileSize (50 000 0000)
  *
  *      Max allowed size in bytes per file.
  *
- * @param [options.uploadRootDir] (OS temp directory)
+ * @param {string} options.uploadRootDir (OS temp directory)
  *
  *      Where to store the files.
  *
- * @param [options.destination] (.)
+ * @param {string} options.destination (.)
  *
  *      Relative path to uploadRootDir, eg. '/images'
  *
- * @param [options.urlBase] (options.destination)
+ * @param {string} options.urlBase (options.destination)
  *
- * @param [options.multiparty]
+ * @param {object} options.multiparty
  *
  *      Is passed to `multiparty` Form constructor.
+ *
+ * @returns {async}
  */
-module.exports = function (options) {
-    return async function upload (ctx, next) {
+module.exports = function uploadDiskMwFactory (options) {
+    return async function uploadDiskMiddleware (ctx, next) {
         const allowedFiles = options.allowedFiles || false
         const maxFileSize = options.maxFileSize || 50000000
         const rootDir = options.uploadRootDir || os.tmpDir()
@@ -64,7 +74,6 @@ module.exports = function (options) {
             const jobs = []
 
             form.on('file', (name, file) => {
-
                 /**
                  * Check white list and delete files which were not expected
                  */
@@ -81,7 +90,7 @@ module.exports = function (options) {
                     return deleteFile(file)
                 }
 
-                const job = new Promise((resolve, reject) => {
+                const job = new Promise((resolveJob, rejectJob) => {
                     /**
                      * Generate new filename and move file to destination directory
                      */
@@ -90,8 +99,10 @@ module.exports = function (options) {
                     const newName = (base + extension).toLowerCase()
                     const newPath = path.join(absoluteDir, newName)
 
-                    fs.rename(file.path, newPath, function (err) {
-                        if (err) reject(err)
+                    fs.rename(file.path, newPath, err => {
+                        if (err) {
+                            return rejectJob(err)
+                        }
 
                         file.path = newPath
                         file.name = newName
@@ -100,28 +111,25 @@ module.exports = function (options) {
 
                         ctx.request.body.files = ctx.request.body.files || {}
                         ctx.request.body.files[file.fieldName] = file
-                        resolve()
+
+                        return resolveJob()
                     })
                 })
 
-                jobs.push(job)
+                return jobs.push(job)
             })
 
             form.on('field', () => {
                 // ignore fields
             })
 
-            form.on('error', (err) => {
-                reject(err)
-            })
+            form.on('error', reject)
 
             form.on('close', () => {
-                if (error) reject(error)
-                else resolve(Promise.all(jobs))
+                error ? reject(error) : resolve(Promise.all(jobs))
             })
 
             form.parse(ctx.req)
-
         })
 
         await next()

@@ -1,18 +1,17 @@
 const credential = require('credential')
 const pw = credential({ work: 0.1 })
 
-const helper = {}
+module.exports = {
 
-helper.get = async function (pass) {
-    const hash = await pw.hash(pass)
+    async get (pass) {
+        const hash = await pw.hash(pass)
 
-    return Buffer(hash).toString('base64')
+        return new Buffer(hash).toString('base64')
+    },
+
+    async verify (hashObjectBase64, inputPassword) {
+        const unbased = new Buffer(hashObjectBase64, 'base64').toString('ascii')
+
+        return await pw.verify(unbased, inputPassword)
+    }
 }
-
-helper.verify = async function (hashObjectBase64, inputPassword) {
-    const unbased = new Buffer(hashObjectBase64, 'base64').toString('ascii')
-
-    return await pw.verify(unbased, inputPassword)
-}
-
-module.exports = helper

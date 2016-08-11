@@ -9,9 +9,9 @@ module.exports = {
 
     /**
      * Use to get pre-signed URL for direct upload to Amazon S3
-     * @param fileName
-     * @param fileType
-     * @param uploadPath
+     * @param {string} fileName File name
+     * @param {string} fileType File type
+     * @param {string} uploadPath Path in the S3 bucket
      * @returns {Promise}
      */
     getUploadUrl (fileName, fileType, uploadPath = '') {
@@ -34,12 +34,15 @@ module.exports = {
                     log.error({ err }, 'Cant get S3 signed url')
                     return reject(err)
                 }
+
                 const returnData = {
                     signedRequest: data,
-                    url: BASE_URL + `/${uploadPath}${fileName}`
+                    url: `${BASE_URL}/${uploadPath}${fileName}`
                 }
+
                 log.info({ data: returnData }, 'S3 signed url generated')
-                resolve({
+
+                return resolve({
                     upload_url: returnData.signedRequest,
                     url: returnData.url
                 })

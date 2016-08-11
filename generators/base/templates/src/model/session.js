@@ -1,12 +1,18 @@
-module.exports = function (sequelize, T) {
-
+module.exports = function sessionModelInit (sequelize, TYPE) {
     const Session = sequelize.define('session', {
-        user_id     : T.INTEGER,
-        token       : T.STRING,
-        expires_at  : T.DATE
+
+        user_id: TYPE.INTEGER,
+
+        token: TYPE.STRING,
+
+        expires_at: TYPE.DATE
+
     }, {
+
         updatedAt: false,
+
         paranoid: false,
+
         classMethods: {
             associate: models => {
                 Session.belongsTo(models.User)

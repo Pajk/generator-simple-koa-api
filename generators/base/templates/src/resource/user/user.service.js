@@ -12,17 +12,17 @@ module.exports = {
             }
 
             return await userData.createUser(data)
-        } catch (e) {
-            log.trace({type: 'signup_error', err: e})
-            e.message = msg.signup_error
-            throw e
+        } catch (err) {
+            log.trace({ type: 'signup_error', err })
+            err.message = msg.signup_error
+            throw err
         }
     },
 
     async login (email, password) {
-        const user = await userData.getUserWithPasswordByEmail(email)
+        const user = await userData.findUserByEmail(email)
 
-        if (user && await hash.verify(user.password, password) == true) {
+        if (user && await hash.verify(user.password, password) === true) {
             await user.update({ last_login: new Date() })
 
             return user

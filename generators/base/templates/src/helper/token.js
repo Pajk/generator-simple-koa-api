@@ -2,35 +2,34 @@ const jwt = require('jsonwebtoken')
 const config = require('../config/auth')
 
 const ALGORITHM = 'HS256'
+const VERIFY_OPTIONS = {
+    complete: true,
+    algorithms: [ALGORITHM]
+}
 
-const helper = {}
-
-helper.create = function (claims, expiresIn = config.expires_in_seconds) {
-    return new Promise(function (resolve, reject) {
-        jwt.sign(claims, config.secret, {
-            expiresIn: expiresIn,
+module.exports = {
+    create (claims, expiresIn) {
+        const options = {
+            expiresIn: expiresIn || config.expires_in_seconds,
             algorithm: ALGORITHM
-        }, function (err, token) {
-            if (err) return reject(err)
-            resolve(token)
-        })
-    })
-}
+        }
 
-helper.verify = function (token) {
-    if (typeof token !== 'string') {
-        throw new Error('Invalid token')
+        return new Promise((resolve, reject) => {
+            const handler = (err, token) => err ? reject(err) : resolve(token)
+
+            jwt.sign(claims, config.secret, options, handler)
+        })
+    },
+
+    verify (token) {
+        if (typeof token !== 'string') {
+            throw new Error('Invalid token')
+        }
+
+        return new Promise((resolve, reject) => {
+            const handler = (err, decodedToken) => err ? reject(err) : resolve(decodedToken)
+
+            jwt.verify(token, config.secret, VERIFY_OPTIONS, handler)
+        })
     }
-
-    return new Promise(function (resolve, reject) {
-        jwt.verify(token, config.secret, {
-            complete: true,
-            algorithms: [ALGORITHM]
-        }, function (err, token) {
-            if (err) return reject(err)
-            resolve(token)
-        })
-    })
 }
-
-module.exports = helper

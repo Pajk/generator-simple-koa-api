@@ -15,7 +15,7 @@ module.exports = {
                 id: addressId,
                 user_id: userId
             }
-        }).spread(updated => updated == 1 ? addressId : null)
+        }).spread(updated => updated === 1 ? addressId : null)
     },
 
     async getAddress (id) {

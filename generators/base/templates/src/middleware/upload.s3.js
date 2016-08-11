@@ -4,6 +4,10 @@ const aws = require('aws-sdk')
 const path = require('path')
 const mime = require('mime')
 const sharp = require('sharp')
+const log = require('../helper/logger')
+
+const DEFAULT_ALLOWED_FORMATS = ['jpg', 'jpeg', 'png', 'pdf', 'webp', 'gif', 'svg', 'tiff']
+const UPLOAD_PART_SIZE_MB = 5
 
 /**
  * Middleware to process multipart request with files
@@ -26,37 +30,39 @@ const sharp = require('sharp')
  * When `options.transform` is used the middleware can produce and upload more than one
  * file per file in the multipart request. For each transform object
  *
- * @param options.aws.access_key_id
+ * @param {object} options Upload options
+ *
+ * @param {string }options.aws.access_key_id
  *
  *      AWS_ACCESS_KEY_ID to configure AWS SDK
  *
- * @param options.aws.secret_access_key
+ * @param {string} options.aws.secret_access_key
  *
  *      AWS_SECRET_ACCESS_KEY to configure AWS SDK
  *
- * @param options.aws.bucket
+ * @param {string} options.aws.bucket
  *
  *      Amazon S3 bucket
  *
- * @param [options.allowedFiles] ()
+ * @param {array} options.allowedFiles ()
  *
  *      Array of file names which are expected, all other files are ignored.
  *
- * @param [options.maxFileSize] (50 000 0000)
+ * @param {number} options.maxFileSize (50 000 0000)
  *
  *      Max allowed size in bytes per file.
  *
- * @param [options.destination] (.)
+ * @param {string} options.destination (.)
  *
  *      Destination relative to bucket root, eg. '/images'
  *
- * @param [options.urlBase] (https://${options.bucket}.s3.amazonaws.com)
+ * @param {string} options.urlBase (https://${options.bucket}.s3.amazonaws.com)
  *
- * @param [options.defaultContentType] (image/jpeg)
+ * @param {string} options.defaultContentType (image/jpeg)
  *
- * @param [options.allowedFormats] (jpg, jpeg, png, pdf, webp, gif, tiff)
+ * @param {array} options.allowedFormats (jpg, jpeg, png, pdf, webp, gif, tiff)
  *
- * @param [options.transform] array
+ * @param {array} options.transform
  *
  *      Only for images (and pdf). If set, the image is converted to jpeg and transformed
  *      as needed. So far only `resize` is supported.
@@ -68,95 +74,130 @@ const sharp = require('sharp')
  *          suffix: '_thumb',
  *          prefix: 'thumbnails'
  *       }]
+ *
+ * @return {function}
  */
-module.exports = function (options) {
-
+module.exports = function uploadS3Middleware (options) {
     const s3Client = new aws.S3({
         accessKeyId: options.aws.access_key_id,
         secretAccessKey: options.aws.secret_access_key
     })
 
-    // Check white list and delete files which were not expected
-    const ignoreFile = function (options, info) {
-        return options.allowedFiles && !options.allowedFiles.includes(info.fieldName)
+    /**
+     * Check white list and delete files which were not expected
+     *
+     * @param  {object} opts Upload options
+     * @param  {array}  opts.allowedFiles Array of allowed keys
+     * @param  {object} info Current file info
+     * @param  {object} info.fieldName Current field key
+     * @return {bool}
+     */
+    function ignoreFile (opts, info) {
+        return opts.allowedFiles && !opts.allowedFiles.includes(info.fieldName)
     }
 
-    const validateFile = function (options, info) {
+    /**
+     * @param  {object} opts Upload options
+     * @param  {array}  opts.allowedFormats Array of allowed file formats
+     * @param  {number} opts.maxFileSize Maximum file size in bytes
+     * @param  {object} info Current file info
+     * @param  {object} info.fieldName Current field key
+     * @return {bool|Error} Returns validation error or true
+     */
+    function validateFile (opts, info) {
         // Check file size and if it exceeds maximum, delete it
-        if (info.size && info.size > options.maxFileSize) {
+        if (info.size && info.size > opts.maxFileSize) {
             const err = new Error('File too big')
+
             err.status = 422
             return err
         }
 
         // Check file content type, reject if not supported
-        if (!options.allowedFormats.includes(mime.extension(info.contentType))) {
+        if (!opts.allowedFormats.includes(mime.extension(info.contentType))) {
             const err = new Error('File type not supported')
+
             err.status = 422
             return err
         }
+
+        return true
     }
 
-    const processAndUploadFile = async function (options, info, part, upload) {
+    /**
+     * @param  {object} opts Upload options
+     * @param  {object} info Current file info needed
+     * @param  {ReadableStream} part Current file data
+     * @param  {function} upload Function for uploading single file
+     * @return {array} Array of info object about created and uploaded files
+     */
+    async function processAndUploadFile (opts, info, part) {
         const baseName = uuid.v4()
 
-        let jobs
-
-        if (options.transform) {
-
+        if (opts.transform) {
             const pipeline = sharp().toFormat('jpeg')
 
-            jobs = options.transform.map(async rules => {
+            const jobs = opts.transform.map(async rules => {
                 const result = await transformImage(pipeline.clone(), rules)
 
                 const imgInfo = Object.assign({}, info, result.info)
 
-                imgInfo.prefix =  rules.prefix || ''
+                imgInfo.prefix = rules.prefix || ''
                 imgInfo.suffix = rules.suffix || ''
-                imgInfo.fieldName = imgInfo.fieldName + imgInfo.suffix
+                imgInfo.fieldName += imgInfo.suffix
                 imgInfo.name = (baseName + imgInfo.suffix + imgInfo.extension).toLowerCase()
-                imgInfo.path = path.join(options.destination, imgInfo.prefix, imgInfo.name).replace(/^\//, '')
+                imgInfo.path = path
+                    .join(opts.destination, imgInfo.prefix, imgInfo.name)
+                    .replace(/^\//, '')
 
-                const uploadInfo = await upload(imgInfo, result.data)
+                const uploadInfo = await pipeToS3(imgInfo, result.data)
 
-                imgInfo.url = options.urlBase ? path.join(options.urlBase, imgInfo.path): imgInfo.url
+                imgInfo.url = opts.urlBase
+                    ? path.join(opts.urlBase, imgInfo.path)
+                    : imgInfo.url
 
                 return Object.assign(imgInfo, uploadInfo)
             })
 
             part.pipe(pipeline)
 
-        } else {
-
-            const work = async () => {
-                info.name = (baseName + '.' + mime.extension(info.contentType)).toLowerCase()
-                info.path = path.join(options.destination, info.name).replace(/^\//, '')
-
-                const uploadInfo = await upload(info, part)
-
-                info.url = options.urlBase ? path.join(options.urlBase, info.path): info.url
-
-                return Object.assign(info, uploadInfo)
-            }
-
-            jobs = [work()]
-
+            return Promise.all(jobs)
         }
 
-        return Promise.all(jobs)
+        /**
+         * Uploads one file and returns file info
+         * @return {object}
+         */
+        async function work () {
+            info.name = `${baseName}.${mime.extension(info.contentType)}`.toLowerCase()
+            info.path = path.join(opts.destination, info.name).replace(/^\//, '')
+
+            const uploadInfo = await pipeToS3(info, part)
+
+            info.url = opts.urlBase
+                ? path.join(opts.urlBase, info.path)
+                : info.url
+
+            return Object.assign(info, uploadInfo)
+        }
+
+        return [work()]
     }
 
-    const transformImage = function (sharpStream, options) {
-
+    /**
+     * @param  {object} sharpStream Sharp library stream
+     * @param  {object} opts Transformation settings
+     * @return {Promise}
+     */
+    function transformImage (sharpStream, opts) {
         return new Promise((resolve, reject) => {
-
-            sharpStream.on('error', function (err) {
-                console.log(err)
+            sharpStream.on('error', err => {
+                log.error(err)
                 reject(err)
             })
 
-            if (options.resize) {
-                sharpStream.resize(options.resize.width, options.resize.height)
+            if (opts.resize) {
+                sharpStream.resize(opts.resize.width, opts.resize.height)
                 sharpStream.max()
             }
 
@@ -170,7 +211,15 @@ module.exports = function (options) {
         })
     }
 
-    const pipeToS3 = function (info, data) {
+    /**
+     * @param  {object} info Uploaded file info
+     * @param  {string} info.bucket S3 bucket to upload to
+     * @param  {string} info.path Path in the S3 bucket
+     * @param  {string} info.contentType File type
+     * @param  {ReadbleStream|Buffer} data File data
+     * @return {Promise}
+     */
+    function pipeToS3 (info, data) {
         return new Promise((resolve, reject) => {
             const params = {
                 Bucket: info.bucket,
@@ -180,33 +229,35 @@ module.exports = function (options) {
                 ContentType: info.contentType,
             }
 
-            const PART_SIZE_MB = 5
-            const options = {
-                partSize:  PART_SIZE_MB * 1024 * 1024,
+            const opts = {
+                partSize: UPLOAD_PART_SIZE_MB * 1024 * 1024,
                 queueSize: 5
             }
             let fileSize = 0
-            const handler = (err, data) => {
-                if (err) {
-                    return reject(err)
-                }
-                resolve({
-                    etag: data.ETag,
-                    url: data.Location,
+
+            const handler = (err, uploadResult) => err
+                ? reject(err)
+                : resolve({
+                    etag: uploadResult.ETag,
+                    url: uploadResult.Location,
                     size: fileSize
                 })
-            }
 
-            const managedUpload = s3Client.upload(params, options, handler)
+            const managedUpload = s3Client.upload(params, opts, handler)
 
-            managedUpload.on('httpUploadProgress', function (evt) {
-                console.log('Progress:', evt.loaded, '/', evt.total)
+            managedUpload.on('httpUploadProgress', evt => {
+                log.trace(info, `Progress: ${evt.loaded} / ${evt.total}`)
                 fileSize = evt.total
             })
         })
     }
 
-    const enhanceContext = function (ctx, uploadedFiles) {
+    /**
+     * @param  {object} ctx Koa context
+     * @param  {array} uploadedFiles Info about uploaded files
+     * @return {undefined}
+     */
+    function enhanceContext (ctx, uploadedFiles) {
         ctx.request.body.files = ctx.request.body.files || {}
         uploadedFiles.forEach(info => {
             ctx.request.body.files[info.fieldName] = info
@@ -214,13 +265,11 @@ module.exports = function (options) {
     }
 
     return async function upload (ctx, next) {
-
         options.allowedFiles = options.allowedFiles || false
-        options.allowedFormats = options.allowedFormats || ['jpg', 'jpeg', 'png', 'pdf', 'webp', 'gif', 'svg', 'tiff']
+        options.allowedFormats = options.allowedFormats || DEFAULT_ALLOWED_FORMATS
         options.maxFileSize = options.maxFileSize || 50000000
         options.destination = options.destination || ''
-        // options.urlBase = options.urlBase || `https://${options.bucket}.s3.amazonaws.com`
-        options.defaultContentType =  options.defaultContentType || 'image/jpeg'
+        options.defaultContentType = options.defaultContentType || 'image/jpeg'
 
         if (!options.aws) {
             throw new Error('[upload.s3] Missing AWS config')
@@ -231,7 +280,7 @@ module.exports = function (options) {
             const errors = []
             const jobs = []
 
-            form.on('part', function (part) {
+            form.on('part', part => {
                 const info = {
                     fieldName: part.name,
                     originalFilename: part.filename,
@@ -245,35 +294,39 @@ module.exports = function (options) {
                 }
 
                 const err = validateFile(options, info)
-                if (err) {
+
+                if (err !== true) {
                     errors.push(err)
                     return part.resume()
                 }
 
-                const createJob = async () => {
-                    const uploadedFiles = await processAndUploadFile(options, info, part, pipeToS3)
+                /**
+                 * Starts uploading file to Amazon S3
+                 * @return {undefined}
+                 */
+                async function createJob () {
+                    const uploadedFiles = await processAndUploadFile(options, info, part)
+
                     enhanceContext(ctx, uploadedFiles)
                 }
 
-                jobs.push(createJob())
+                return jobs.push(createJob())
             })
 
-            form.on('field', function () { /* ignore fields */ })
+            form.on('field', () => true)
 
             form.on('error', reject)
 
-            form.on('close', function () {
-                if (errors.length > 0) {
-                    return reject(errors[0])
-                }
-
-                resolve(Promise.all(jobs))
-            })
+            form.on('close', () =>
+                errors.length > 0
+                    ? reject(errors[0])
+                    : resolve(Promise.all(jobs))
+            )
 
             // start the processing
             form.parse(ctx.req)
         })
 
-        await next()
+        return await next()
     }
 }

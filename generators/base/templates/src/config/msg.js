@@ -10,6 +10,7 @@ module.exports = {
         update_error: 'Profile not updated'
     },
     facebook: {
-        already_signed_up: 'User with this Facebook profile is already signed up'
+        already_signed_up: 'User with this Facebook profile is already signed up',
+        permissions_needed: 'We need access to your email and public profile in order to continue.'
     }
 }

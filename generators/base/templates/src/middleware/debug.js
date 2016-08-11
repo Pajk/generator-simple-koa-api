@@ -1,7 +1,7 @@
 const log = require('../helper/logger')
 
-module.exports = function (enabled) {
-    return async (ctx, next) => {
+module.exports = function debugMwFactory (enabled) {
+    return async function debugMiddleware (ctx, next) {
         if (enabled) {
             log.debug({
                 path: ctx.request.path,

@@ -1,7 +1,12 @@
 const Joi = require('joi')
 
-const createError = function (error, message) {
-    error.message = message ? message : error.message
+/**
+ * @param  {Error} error Error instance
+ * @param  {string} message Message to override error message
+ * @return {Error}
+ */
+function createError (error, message) {
+    error.message = message || error.message
     error.errors = error.details.reduce((errors, info) => {
         errors[info.path] = info.message
         return errors
@@ -11,9 +16,9 @@ const createError = function (error, message) {
 }
 
 module.exports = {
-    create: (schema) => (fields, options) => {
+    create: schema => (fields, options) => {
         options = options || {}
-        if (typeof options == 'string') {
+        if (typeof options === 'string') {
             options = {
                 message: options
             }

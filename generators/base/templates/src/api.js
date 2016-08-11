@@ -6,6 +6,7 @@ const koalogger = require('koa-logger')
 const bodyParser = require('koa-bodyparser')
 const koaStatic = require('koa-static')
 const Koa = require('koa')
+const path = require('path')
 
 const paginationMiddleware = require('./middleware/pagination')
 const debugMiddleware = require('./middleware/debug')
@@ -16,37 +17,35 @@ const config = require('./config/api')
 
 const app = new Koa()
 
+// trust proxy
+app.proxy = true
+
 app.use(compress())
 app.use(errorMiddleware())
 
-if (process.env.NODE_ENV == 'development') {
+if (config.development) {
     app.use(koalogger())
 }
 
 app.use(bodyParser())
 
 app.use(logMiddleware())
-app.use(debugMiddleware(process.env.DEBUG_REQUEST == 'true'))
+app.use(debugMiddleware(config.debugRequest))
 app.use(paginationMiddleware())
 
-app.use(koaStatic(__dirname + '/../public'))
+app.use(koaStatic(path.join(__dirname, '../public')))
 
 require('./resource/user').init(app)
 require('./resource/facebook').init(app)
 require('./resource/session').init(app)
 require('./resource/profile').init(app)
 
-const api = {}
 
-api.start = function () {
-    // trust proxy
-    app.proxy = true
+module.exports = {
+    start () {
+        log.info(config.name, 'listening @', config.port, ' [', config.environment, ']')
+        return app.listen(config.port)
+    },
 
-    const port = config.port
-    log.info(config.name, 'listening @', port, ' [', process.env.NODE_ENV || 'development', ']')
-    return app.listen(port)
+    app
 }
-
-api.app = app
-
-module.exports = api

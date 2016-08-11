@@ -1,13 +1,9 @@
 const logger = require('../helper/logger')
 
-//log.addSerializers({req: reqSerializer});
+module.exports = function loggerMwFactory () {
+    return async function middlewareFactory (ctx, next) {
+        ctx.log = logger.child({})
 
-module.exports = function () {
-    return async (ctx, next) => {
-
-        ctx.log = logger.child({
-        })
-
-        await next()
+        return await next()
     }
 }
