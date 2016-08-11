@@ -1,5 +1,5 @@
 {
-  "name": "API_NAME",
+  "name": "<%= API_NAME %>",
   "version": "0.1.0",
   "description": "<%= API_NAME %>",
   "main": "src/startup.js",
@@ -8,6 +8,7 @@
     "cover": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && istanbul cover test.js $FILE | tap-spec",
     "start": "node db-migrate.js && node src/startup.js | bunyan",
     "dev": "nodemon | bunyan",
+    "repl": "REPL=true node src/startup.js",
     "doc": "aglio -i doc/api.md -o doc/api.html --theme-full-width",
     "lint": "eslint src/ test/ test.js",
     "db-migrate": "db-migrate",

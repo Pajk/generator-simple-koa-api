@@ -61,3 +61,4 @@ const schema = Joi.object({
 })
 
 module.exports = baseValidator.create(schema)
+module.exports.schema = schema
