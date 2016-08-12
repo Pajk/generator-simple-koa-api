@@ -73,6 +73,7 @@ module.exports = generators.Base.extend({
       this.copy('_travis.yml', '.travis.yml')
       this.copy('.editorconfig')
       this.copy('.eslintrc.js')
+      this.copy('.babelrc')
     }
   }
 })

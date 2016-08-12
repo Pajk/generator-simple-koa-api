@@ -1,5 +1,5 @@
 /* eslint-disable no-undef, arrow-parens */
-const profileRouter = require('../../src/resource/profile/profile.router')
+const profileRouter = require('../src/resource/profile/profile.router')
 
 describe('Profile API', () => {
     it('Should get user profile', async () => {

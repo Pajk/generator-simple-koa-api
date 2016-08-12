@@ -1,6 +1,5 @@
 /* eslint-disable no-undef, arrow-parens */
-
-const userRouter = require('../../src/resource/user/user.router')
+const userRouter = require('../src/resource/user/user.router')
 
 describe('User API', () => {
     it('Should create a user', async () => {

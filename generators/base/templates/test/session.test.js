@@ -1,5 +1,5 @@
 /* eslint-disable no-undef, arrow-parens */
-const sessionRouter = require('../../src/resource/session/session.router')
+const sessionRouter = require('../src/resource/session/session.router')
 
 describe('Session API', () => {
     it('Should login user', async () => {

@@ -4,8 +4,8 @@
   "description": "<%= API_NAME %>",
   "main": "src/startup.js",
   "scripts": {
-    "test": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && NODE_ENV=test mocha --compilers js:babel-core/register --recursive --require test/bootstrap $FILE",
-    "cover": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && NODE_ENV=test istanbul cover _mocha -- --compilers js:babel-core/register --recursive 'test/**/*.test.js' --require test/bootstrap",
+    "test": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && NODE_ENV=test mocha --compilers js:babel-core/register --require test/bootstrap $FILE",
+    "cover": "echo 'Cleaning DB...' && node db-test-reset.js 1> /dev/null && NODE_ENV=test istanbul cover _mocha -- --compilers js:babel-core/register --require test/bootstrap",
     "start": "node db-migrate.js && node src/startup.js | bunyan",
     "dev": "nodemon | bunyan",
     "repl": "REPL=true node src/startup.js",
