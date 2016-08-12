@@ -1,4 +1,5 @@
-const koaSend = require('koa-send')
+const fs = require('fs')
+const path = require('path')
 
 const msg = require('../../config/msg')
 const validate = require('./user.validator')
@@ -26,7 +27,9 @@ module.exports = {
     },
 
     async renderCreate (ctx) {
-        await koaSend(ctx, 'user.create.html', { root: __dirname })
+        ctx.body = fs.createReadStream(path.join(__dirname, 'user.create.html'))
+        ctx.status = 200
+        ctx.type = 'html'
     },
 
     async uploadAvatar (ctx) {

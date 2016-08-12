@@ -1,29 +1,23 @@
 'use strict'
+/* eslint-disable no-process-env, no-console, no-process-exit */
 
-require('dotenv').config({path: '.env-test', silent: true})
+require('dotenv').config({ path: '.env-test', silent: true })
 
 const dbMigrate = require('db-migrator/lib/migrate')
 const dbRollback = require('db-migrator/lib/rollback')
 
-const co = require('co')
-
-const exitWithError = function() {
-    process.exit(1)
-}
-
-co(function *() {
-
-    yield dbRollback({
-        connectionString: process.env.PG_URL,
-        targetVersion: 'initial',
-        path: './migrations',
-        tableName: 'migrations'
-    }).catch(exitWithError)
-
-    yield dbMigrate({
+dbRollback({
+    connectionString: process.env.PG_URL,
+    targetVersion: 'initial',
+    path: './migrations',
+    tableName: 'migrations'
+})
+.then(() =>
+    dbMigrate({
         connectionString: process.env.PG_URL,
         path: './migrations',
         tableName: 'migrations'
-    }).catch(exitWithError)
-
-}).then(process.exit).catch(exitWithError)
+    })
+)
+.then(() => process.exit(0))
+.catch(() => process.exit(1))
