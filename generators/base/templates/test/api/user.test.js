@@ -1,18 +1,18 @@
-const userRouter = require('../src/resource/user/user.router')
+/* eslint-disable no-undef, arrow-parens */
 
-module.exports = (should, request, helper) => {
-    should(`== ${__filename} ==`, function* test () {})
+const userRouter = require('../../src/resource/user/user.router')
 
-    should('Create a user', function* test (assert) {
-        const user = yield helper.createUser()
+describe('User API', () => {
+    it('Should create a user', async () => {
+        const user = await helper.createUser()
 
         assert.ok(user, 'user created')
         assert.ok(user.token, 'response contains session token')
         assert.ok(user.id, 'response contains user id')
     })
 
-    should('Prevent to signup twice with the same email address', function* test (assert) {
-        const user = yield helper.createUser()
+    it('Should prevent to signup twice with the same email address', async () => {
+        const user = await helper.createUser()
 
         const newUser = {
             first_name: user.first_name,
@@ -21,7 +21,7 @@ module.exports = (should, request, helper) => {
             password: user.password
         }
 
-        const resp = yield helper.request({
+        const resp = await helper.request({
             method: 'post',
             url: userRouter.url('createUser'),
             data: newUser,
@@ -32,12 +32,10 @@ module.exports = (should, request, helper) => {
         assert.ok(resp.body.errors, 'contains errors')
         assert.ok(resp.body.errors.email, 'contains email error')
         assert.equal(resp.body.status_code, 422, 'contains status code')
-
-        assert.pass('server returns 403')
     })
 
-    should('Check required fields', function* test (assert) {
-        const resp = yield helper.request({
+    it('Should check required fields', async () => {
+        const resp = await helper.request({
             url: userRouter.url('createUser'),
             method: 'post',
             data: {
@@ -53,4 +51,4 @@ module.exports = (should, request, helper) => {
         assert.ok(resp.body.errors.password, 'contains email error')
         assert.equal(resp.body.status_code, 422, 'contains status code')
     })
-}
+})

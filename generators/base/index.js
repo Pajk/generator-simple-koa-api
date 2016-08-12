@@ -59,7 +59,6 @@ module.exports = generators.Base.extend({
         this.destinationPath('.')
       )
 
-      this.copy('test.js')
       this.copy('README.md', 'README.md', context)
 
       this.directory('src')

@@ -3,34 +3,34 @@ const crypto = require('crypto')
 const userRouter = require('../src/resource/user/user.router')
 
 /**
- * @param  {object} request Supertest instance
+ * @param  {object} supertest Supertest instance
  * @return {object}
  */
-module.exports = function testHelperFactory (request) {
+module.exports = function testHelperFactory (supertest) {
     return {
 
         request (options) {
             const method = options.method || 'get'
-            const req = request[method.toLowerCase()](options.url || options.path)
+            const request = supertest[method.toLowerCase()](options.url || options.path)
             const expect = options.expect || options.status || options.assert
 
             if (options.user) {
-                this.auth(options.user, req)
+                this.auth(options.user, request)
             }
 
             if (options.data) {
-                req.send(options.data)
+                request.send(options.data)
             }
 
             if (expect) {
-                req.expect(expect)
+                request.expect(expect)
             }
 
             if (options.headers) {
-                _.each(options.headers, req.set)
+                _.each(options.headers, request.set)
             }
 
-            return req.end()
+            return request
         },
 
         auth (user, req) {
@@ -48,7 +48,7 @@ module.exports = function testHelperFactory (request) {
 
         // ==== user ====
 
-        * createUser (attributes) {
+        async createUser (attributes) {
             const randomUser = {
                 first_name: `First ${Date.now()}${Math.floor(1000000 * Math.random())}`,
                 last_name: `Last ${Date.now()}${Math.floor(1000000 * Math.random())}`,
@@ -58,7 +58,7 @@ module.exports = function testHelperFactory (request) {
 
             Object.assign(randomUser, attributes)
 
-            const resp = yield this.request({
+            const resp = await this.request({
                 method: 'post',
                 url: userRouter.url('createUser'),
                 data: randomUser,

@@ -1,10 +1,9 @@
-const sessionRouter = require('../src/resource/session/session.router')
+/* eslint-disable no-undef, arrow-parens */
+const sessionRouter = require('../../src/resource/session/session.router')
 
-module.exports = (should, request, helper) => {
-    should(`== ${__filename}  ==`, function* test () {})
-
-    should('Login user', function* test (assert) {
-        const user = yield helper.createUser()
+describe('Session API', () => {
+    it('Should login user', async () => {
+        const user = await helper.createUser()
         const creds = {
             email: user.email,
             password: user.password
@@ -12,7 +11,7 @@ module.exports = (should, request, helper) => {
 
         assert.ok(user, 'user created')
 
-        const resp = yield helper.request({
+        const resp = await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: creds,
@@ -24,27 +23,25 @@ module.exports = (should, request, helper) => {
         assert.notEqual(resp.body.token, user.token, 'new session token was generated')
 
         creds.password = 'asdfeee'
-        yield helper.request({
+        await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: creds,
             status: 403
         })
-        assert.pass('wrong password returns 403')
 
         creds.email = 'madeup@mail.com'
-        yield helper.request({
+        await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: creds,
             status: 403
         })
-        assert.pass('wrong email returns 403')
     })
 
-    should('Reject invalid credentials', function* test (assert) {
-        assert.pass('-- invalid email/password')
-        let resp = yield helper.request({
+    it('Should reject invalid credentials', async () => {
+        // -- invalid email/password
+        let resp = await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: {
@@ -60,8 +57,8 @@ module.exports = (should, request, helper) => {
         assert.ok(resp.body.errors.password, 'contains email error')
         assert.equal(resp.body.status_code, 422, 'contains status code')
 
-        assert.pass('-- empty body')
-        resp = yield helper.request({
+        // -- empty body
+        resp = await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             status: 422
@@ -73,8 +70,8 @@ module.exports = (should, request, helper) => {
         assert.ok(resp.body.errors.password, 'contains email error')
         assert.equal(resp.body.status_code, 422, 'contains status code')
 
-        assert.pass('--  valid but not in db')
-        resp = yield helper.request({
+        // --  valid but not in db
+        resp = await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: {
@@ -88,22 +85,22 @@ module.exports = (should, request, helper) => {
         assert.equal(resp.body.status_code, 403, 'contains status code')
     })
 
-    should('Logout user', function* test (assert) {
+    it('Should logout user', async () => {
         const logoutUrl = sessionRouter.url('deleteSession')
-        const user = yield helper.createUser()
+        const user = await helper.createUser()
         const creds = {
             email: user.email,
             password: user.password
         }
 
-        yield helper.request({
+        await helper.request({
             method: 'del',
             url: logoutUrl,
             user,
             status: 204
         })
 
-        const resp = yield helper.request({
+        const resp = await helper.request({
             method: 'post',
             url: sessionRouter.url('createSession'),
             data: creds,
@@ -112,20 +109,18 @@ module.exports = (should, request, helper) => {
 
         const token = resp.body.token
 
-        yield helper.request({
+        await helper.request({
             method: 'del',
             url: logoutUrl,
             user: { token },
             status: 204
         })
-        assert.pass('logout with valid token')
 
-        yield helper.request({
+        await helper.request({
             method: 'del',
             url: logoutUrl,
             user: { token },
             status: 401
         })
-        assert.pass('logout with invalid token')
     })
-}
+})

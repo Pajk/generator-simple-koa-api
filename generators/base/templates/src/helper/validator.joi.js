@@ -12,6 +12,7 @@ function createError (error, message) {
         return errors
     }, {})
     error.status = 422
+
     return error
 }
 
